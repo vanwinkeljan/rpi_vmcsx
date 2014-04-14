@@ -142,7 +142,7 @@ extern FILE *xxx_vclog;
 #endif
 
 #ifdef ANDROID
-#include "interface/khronos/egl/egl_android.c"
+#include <system/window.h>
 #endif
 
 static void egl_current_release_surfaces(CLIENT_PROCESS_STATE_T *process, EGL_CURRENT_T *current);
@@ -1574,12 +1574,12 @@ KHRONOS_CLIENT_LOG("eglCreateContext start\n");
                   if (version == 1)
 				  	{
                      type = OPENGL_ES_11;
-					 LOGE("Creating OpenGL 1.1 Session");
+					 ALOGE("Creating OpenGL 1.1 Session");
                   	}
                   else
 				  	{
 				  	type = OPENGL_ES_20;
-					LOGE("Creating OpenGL 2.0 Session");
+					ALOGE("Creating OpenGL 2.0 Session");
 					}
 
                context = egl_context_create(

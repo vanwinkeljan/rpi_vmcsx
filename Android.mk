@@ -30,12 +30,13 @@ LOCAL_LDLIBS := -lpthread -ldl
 LOCAL_ARM_MODE := arm
 
 VMCSX_DIR := $(LOCAL_PATH)
+GRALLOC_DIR := $(LOCAL_PATH)/../gralloc
 
 LOCAL_C_INCLUDES += $(VMCSX_DIR)
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/helpers/vc_image
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/interface/vcos/pthreads
 #LOCAL_C_INCLUDES += frameworks/base/opengl/include
-LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
+#LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/../v3d_library/inc
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/../v3d_library/src
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/interface/khronos/include
@@ -45,6 +46,7 @@ LOCAL_C_INCLUDES += $(VMCSX_DIR)/middleware/khronos/vg/2708/platform
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/vcfw/drivers/chip
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/vcinclude
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/vcinclude/dummy
+LOCAL_C_INCLUDES += $(GRALLOC_DIR)
 
 
 
@@ -86,7 +88,8 @@ SRC32S := \
 	egl_client_context.c	\
 	egl_client_surface.c	\
 	brcm_egl.c \
-	composer.cpp
+	composer.cpp \
+        egl_android.c
 
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 

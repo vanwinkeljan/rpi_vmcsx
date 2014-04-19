@@ -189,6 +189,7 @@ typedef EGLBoolean (EGLAPIENTRYP PFNEGLGETSYNCATTRIBKHRPROC) (EGLDisplay dpy, EG
 #endif
 
 EGLClientBuffer eglGetRenderBufferANDROID(EGLDisplay display, EGLSurface surface_);
+void* EGLAPIENTRY eglGetComposerANDROID(EGLDisplay dpy, EGLSurface draw);
 
 #ifdef __cplusplus
 }

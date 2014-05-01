@@ -103,6 +103,7 @@ by an attribute value"
    EGL_TRANSPARENT_TYPE is always EGL_NONE because we don't support EGL_TRANSPARENT_RGB. Should there be an EGL_TRANSPARENT_ALPHA?
 */
 
+
 #ifdef DIRECT_RENDERING
 #include "interface/khronos/egl/egl_brcm_android_mangle.h"
 #endif
@@ -200,9 +201,11 @@ Also affects global image (and possibly others?)
 
    -
 */
+void init_dispmanx(int type, int width, int height);
 
 EGLAPI EGLBoolean EGLAPIENTRY eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
 {
+	init_dispmanx(VC_IMAGE_RGB565, -1, -1);
 #if defined(RPC_DIRECT_MULTI)
    CLIENT_THREAD_STATE_T *thread;
    EGLBoolean result;
@@ -362,7 +365,7 @@ name may be one of EGL CLIENT APIS, EGL EXTENSIONS, EGL VENDOR, or
 EGL VERSION.
 The EGL CLIENT APIS string describes which client rendering APIs are supported.
 It is zero-terminated and contains a space-separated list of API names,
-which must include at least one of ‘‘OpenGL ES’’ or ‘‘OpenVG’’.
+which must include at least one of OpenGL ES or OpenVG.
 Version 1.3 - December 4, 2006
 3.4. CONFIGURATION MANAGEMENT 13
 The EGL EXTENSIONS string describes which EGL extensions are supported
@@ -512,7 +515,7 @@ EGLAPI const char EGLAPIENTRY * eglQueryString(EGLDisplay dpy, EGLint name)
    of the OpenVG 1.0 specification for more information.
 
    Similarly, the EGL_VG_ALPHA_FORMAT attribute does not necessarily control
-   or affect the window system’s interpretation of alpha values, even when the window
+   or affect the window systems interpretation of alpha values, even when the window
    system makes use of alpha to composite surfaces at display time. The window system's
    use and interpretation of alpha values is outside the scope of EGL. However,
    the preferred behavior is for window systems to ignore the value of EGL_VG_-
@@ -570,11 +573,25 @@ EGLAPI const char EGLAPIENTRY * eglQueryString(EGLDisplay dpy, EGLint name)
    -
 */
 
+//sjh hack
+extern int create_window_surface;
+
 EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config, EGLNativeWindowType win, const EGLint *attrib_list)
 {
    CLIENT_THREAD_STATE_T *thread;
    CLIENT_PROCESS_STATE_T *process;
    EGLSurface result;
+
+   /* sjh hack to support dispmanx window input */
+   struct realWin
+   {
+	   unsigned int element;
+	   unsigned int width;
+	   unsigned int height;
+   } *in_win;
+
+   in_win = (struct realWin *)win;
+   /* hack */
 
    KHRONOS_CLIENT_LOG("eglCreateWindowSurface start\n");
 
@@ -612,13 +629,21 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface(EGLDisplay dpy, EGLConfig c
             win = convertNativeWindowType(win);
 #endif
 #endif
-            platform_get_dimensions(win, &width, &height);
+            if (win <= 14)
+            	platform_get_dimensions(win, &width, &height);
+            else
+            {
+				width = in_win->width;
+				height = in_win->height;
+            }
 
             if (width <= 0 || width > EGL_CONFIG_MAX_WIDTH || height <= 0 || height > EGL_CONFIG_MAX_HEIGHT) {
                /* TODO: Maybe EGL_BAD_ALLOC might be more appropriate? */
                thread->error = EGL_BAD_NATIVE_WINDOW;
                result = EGL_NO_SURFACE;
             } else {
+            	create_window_surface = 1;
+
                surface = egl_surface_create(
                                 (EGLSurface)(size_t)process->next_surface,
                                 WINDOW,
@@ -638,6 +663,8 @@ EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface(EGLDisplay dpy, EGLConfig c
                                 EGL_NO_TEXTURE,
                                 EGL_NO_TEXTURE,
                                 0, 0);
+
+               create_window_surface = 0;
 
                if (surface) {
                   if (khrn_pointer_map_insert(&process->surfaces, process->next_surface, surface)) {
@@ -2582,8 +2609,8 @@ EGLAPI void EGLAPIENTRY (* eglGetProcAddress(const char *procname))(void)
    if (!strcmp(procname, "glDrawTexfvOES"))
       return (void(*)(void))glDrawTexfvOES;
 #endif
-   if (!strcmp(procname, "eglGetRenderBufferANDROID"))
-   	return (void(*)(void))eglGetRenderBufferANDROID;
+//   if (!strcmp(procname, "eglGetRenderBufferANDROID"))
+//   	return (void(*)(void))eglGetRenderBufferANDROID;
 
    return (void(*)(void)) NULL;
 }

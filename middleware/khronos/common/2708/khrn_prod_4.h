@@ -100,6 +100,7 @@ misc stuff
    }
 #endif
 
+   /*
    static INLINE void khrn_hw_full_memory_barrier(void)
    {
       register uint32_t x asm ("r0");
@@ -108,6 +109,7 @@ misc stuff
       asm volatile ("ldr %0, [%1]" : "=r" (x) : "r" (ptr));
       asm volatile ("str %0, [%1]" :: "r" (x), "r" (ptr));
    }
+   */
 
    static INLINE void khrn_hw_flush_dcache(void) {}
    static INLINE void khrn_hw_flush_dcache_range(void *p, uint32_t size) {}
@@ -159,9 +161,20 @@ misc stuff
    static INLINE void khrn_hw_invalidate_dcache_range(void *p, uint32_t size) {}
    static INLINE void khrn_hw_invalidate_l1cache_range(void *p, uint32_t size) {}
 #else
-   #define khrn_hw_alias_direct ALIAS_DIRECT
+   /*#define khrn_hw_alias_direct ALIAS_DIRECT
    #define khrn_hw_alias_normal ALIAS_NORMAL
-   #define khrn_hw_alias_l1_nonallocating ALIAS_L1_NONALLOCATING
+   #define khrn_hw_alias_l1_nonallocating ALIAS_L1_NONALLOCATING*/
+
+   static INLINE uint32_t khrn_hw_alias_direct(const void *addr)
+   {
+//	   return ((uint32_t)addr & ~0xc0000000) | 0x40000000;
+	   return ((uint32_t)addr & ~0xc0000000) | 0x80000000;
+   }
+
+   static INLINE uint32_t khrn_hw_alias_normal(const void *addr)
+   {
+	   return (uint32_t)addr;
+   }
 
    static INLINE uint32_t khrn_hw_addr(const void *addr)
    {
@@ -175,7 +188,7 @@ misc stuff
 
    extern void khrn_hw_full_memory_barrier(void);
 
-   static INLINE void khrn_hw_flush_dcache(void) { vclib_dcache_flush(); }
+   static INLINE void khrn_hw_flush_dcache(void) { /*vclib_dcache_flush();*//*printf("would do cache flush here %s %d\n", __FILE__, __LINE__ );*/}
    static INLINE void khrn_hw_flush_dcache_range(void *p, uint32_t size) { vclib_dcache_flush_range(p, size); }
    static INLINE void khrn_hw_flush_l1cache_range(void *p, uint32_t size) { vclib_l1cache_flush_range(p, size); }
    static INLINE void khrn_hw_invalidate_dcache_range(void *p, uint32_t size) { vclib_dcache_invalidate_range(p, size); }
@@ -261,10 +274,28 @@ static INLINE void put_float(uint8_t *p, float f)
    put_word(p, float_to_bits(f));
 }
 
+char *get_mapping(int n);
+void build_mapping(void);
+
 static INLINE void add_byte(uint8_t **p, uint8_t n)
 {
-   put_byte(*p, n);
+	put_byte(*p, n);
    (*p) += 1;
+}
+
+static INLINE void Add_byte(uint8_t **p, uint8_t n)
+{
+#ifdef MEGA_DEBUG
+	static int first = 1;
+	if (first)
+	{
+		first = 0;
+		build_mapping();
+	}
+	printf("%p %d %s\n", *p, n, (n >=0 && n < 116) ? get_mapping(n) : "OUT OF RANGE");
+#endif
+
+	add_byte(p, n);
 }
 
 static INLINE void add_short(uint8_t **p, uint16_t n)
@@ -286,6 +317,9 @@ static INLINE void add_float(uint8_t **p, float f)
 
 static INLINE void add_pointer(uint8_t **p, void *ptr)
 {
+#ifdef MEGA_DEBUG
+	ALOGI("%p pointer %p\n", *p, khrn_hw_addr(khrn_hw_alias_direct(ptr)));
+#endif
    add_word(p, khrn_hw_addr(khrn_hw_alias_direct(ptr)));   //PTR
 }
 

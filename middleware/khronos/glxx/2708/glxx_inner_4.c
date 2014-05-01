@@ -42,6 +42,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define TILE_CL_SIZE_INITIAL 32
 //#define STEREOSCOPIC_FRAMEBUFFER_HACK
 //#define DEBUG_CL_CREATE
+unsigned char *first_branch = 0;
 
 /*************************************************************
  Static data
@@ -666,13 +667,13 @@ static bool create_master_cl(void)
    render_state->installed_fb.pad_height  = col->height ;
 
    // Clear colour and depth
-   add_byte(&instr, KHRN_HW_INSTR_STATE_CLEARCOL);   //(14)
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_CLEARCOL);   //(14)
    add_word(&instr, render_state->color_value);
    add_word(&instr, render_state->color_value);
    add_word(&instr, (uint32_t)(render_state->depth_value * 16777215.0f));
    add_byte(&instr, render_state->stencil_value);
 
-   add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);  //(11)
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);  //(11)
    col_format = render_state->installed_fb.col_format & ~(IMAGE_FORMAT_PRE | IMAGE_FORMAT_LIN);
 #ifdef __BCM2708A0__
    vcos_assert(col_format == ABGR_8888_RSO ||
@@ -751,11 +752,11 @@ the buffer */
       Clear tile buffer
       On 2708A0 this requires a dummy store. On 2708B0 we disable the store.
    */
-   add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);     //(3)
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);     //(3)
    add_byte(&instr, 0);
    add_byte(&instr, 0);
 #ifdef __BCM2708A0__
-   add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE);       //(7)
+   Add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE);       //(7)
    add_byte(&instr, KHRN_HW_INSTR_NOP);
    add_byte(&instr, KHRN_HW_INSTR_NOP);
    add_byte(&instr, KHRN_HW_INSTR_NOP);
@@ -763,18 +764,18 @@ the buffer */
    add_byte(&instr, KHRN_HW_INSTR_NOP);
    add_byte(&instr, KHRN_HW_INSTR_NOP);
 #else
-   add_byte(&instr, KHRN_HW_INSTR_STORE_GENERAL);         //(7)
+   Add_byte(&instr, KHRN_HW_INSTR_STORE_GENERAL);         //(7)
    add_short(&instr, 0);                          /* store = none */
    add_word(&instr, 0);                           /* no address needed */
 #endif
 
 #if !defined(SIMPENROSE_RECORD_OUTPUT) || defined(SIMPENROSE_RECORD_BINNING)
    // Wait for binner to finish before rendering anything
-   add_byte(&instr, KHRN_HW_INSTR_WAIT_SEMAPHORE);        //(2)
-   add_byte(&instr, KHRN_HW_INSTR_MARKER); // khrn_hw assumes there is a MARKER just after the WAIT_SEMAPHORE
+   Add_byte(&instr, KHRN_HW_INSTR_WAIT_SEMAPHORE);        //(2)
+   Add_byte(&instr, KHRN_HW_INSTR_MARKER); // khrn_hw assumes there is a MARKER just after the WAIT_SEMAPHORE
 #else
-   add_byte(&instr, KHRN_HW_INSTR_NOP);
-   add_byte(&instr, KHRN_HW_INSTR_NOP);
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);
 #endif
    // Populate the master control list with branch instructions to tile control lists
    if(!populate_master_cl(&render_state->installed_fb))
@@ -794,7 +795,7 @@ static bool create_bin_cl(void)
    if(!instr)
       goto fail;
 
-   add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_BINNING_MODE);  //(16)
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_BINNING_MODE);  //(16)
 
    state_size = render_state->num_tiles_x * render_state->num_tiles_y * KHRN_HW_TILE_STATE_SIZE;
 
@@ -810,10 +811,10 @@ static bool create_bin_cl(void)
          1<<2   |   //Auto-initialise tile state data array
          0<<3   |   //Tile allocation initial block size (32 bytes)
          2<<5);      //Tile allocation block size (32 bytes)
-   add_byte(&instr, KHRN_HW_INSTR_START_TILE_BINNING);       //(1)
+   Add_byte(&instr, KHRN_HW_INSTR_START_TILE_BINNING);       //(1)
 
    /* Ensure primitive format is reset. TODO: is this necessary? */
-   add_byte(&instr, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT); //(2)
+   Add_byte(&instr, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT); //(2)
    add_byte(&instr, 0x12);   /* 16 bit triangle */
 
 #ifdef XXX_OFFLINE
@@ -887,7 +888,7 @@ void draw_dither(GLXX_HW_RENDER_STATE_T* rs)
 	/*
 	* Emit scissor/clipper/viewport instructions
 	*/
-	add_byte(&instr, KHRN_HW_INSTR_STATE_CLIP);	   //(9)
+	Add_byte(&instr, KHRN_HW_INSTR_STATE_CLIP);	   //(9)
 	add_short(&instr, x);
 	add_short(&instr, y);
 	add_short(&instr, xmax - x);
@@ -896,12 +897,12 @@ void draw_dither(GLXX_HW_RENDER_STATE_T* rs)
 	/*
 	* Emit a Configuration record
 	*/
-	add_byte(&instr, KHRN_HW_INSTR_STATE_CFG);	  /*(4) */
+	Add_byte(&instr, KHRN_HW_INSTR_STATE_CFG);	  /*(4) */
 	add_byte(&instr, 1 | 1<<1);		  /*enfwd, enrev */
 	add_byte(&instr, 7 << 4 ); /* zfunc=always, enzu */
 	add_byte(&instr, 0);			  //not enez, enezu
 	
-	add_byte(&instr, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);  //(5)
+	Add_byte(&instr, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);  //(5)
 	add_short(&instr, 0);
 	add_short(&instr, 0);
 	
@@ -964,7 +965,7 @@ void draw_dither(GLXX_HW_RENDER_STATE_T* rs)
 	rec[3] = khrn_hw_addr(khrn_hw_alias_direct(vdata));	 //PTR
 	locked_addr += 4;
 	
-	add_byte(&instr, KHRN_HW_INSTR_NV_SHADER);	  //(5)
+	Add_byte(&instr, KHRN_HW_INSTR_NV_SHADER);	  //(5)
 	add_pointer(&instr, rec);
 	
 	/*
@@ -972,12 +973,12 @@ void draw_dither(GLXX_HW_RENDER_STATE_T* rs)
 	*/
 	
 	// Emit a GLDRAWARRAYS instruction
-	add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
+	Add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
 	add_byte(&instr, 6); 						//Primitive mode (triangle_fan)
 	add_word(&instr, 4); 						//Length (number of vertices)
 	add_word(&instr, 0); 						//Index of first vertex
 	
-	add_byte(&instr, KHRN_HW_INSTR_NOP); 	   //(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP); 	   //(1) TODO: is this necessary?
 
 	 return true;
 	
@@ -1029,11 +1030,11 @@ bool glxx_hw_render_state_flush(GLXX_HW_RENDER_STATE_T *rs)
       goto quit;
 
 #if !defined(SIMPENROSE_RECORD_OUTPUT) || defined(SIMPENROSE_RECORD_BINNING)
-   add_byte(&instr, KHRN_HW_INSTR_INCR_SEMAPHORE);   //(1)
+   Add_byte(&instr, KHRN_HW_INSTR_INCR_SEMAPHORE);   //(1)
 #else
-   add_byte(&instr, KHRN_HW_INSTR_NOP);              // -- Make sure we use the same amount of space
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);              // -- Make sure we use the same amount of space
 #endif
-   add_byte(&instr, KHRN_HW_INSTR_FLUSH);
+   Add_byte(&instr, KHRN_HW_INSTR_FLUSH);
 
    if (!khrn_fmem_start_render(render_state->fmem))
       goto quit;
@@ -1082,8 +1083,9 @@ bool glxx_hw_render_state_flush(GLXX_HW_RENDER_STATE_T *rs)
 
    ////XXXXXXXXXXXXXXXXXX
 #ifdef SIMPENROSE
-   //egl_server_platform_display(7, &debug_image, 0);
 #endif
+//      VC_IMAGE_T debug_image;
+//   egl_server_platform_display(7, &debug_image, 0);
    ////XXXXXXXXXXXXXXXXXX
 
    MEM_ASSIGN(rs->installed_fb.mh_color_image, MEM_INVALID_HANDLE);
@@ -1259,7 +1261,7 @@ static bool populate_master_cl(GLXX_HW_FRAMEBUFFER_T *fb)
 
             INCR_DRIVER_COUNTER(tb_color_loads);
 
-            add_byte(&instr, KHRN_HW_INSTR_LOAD_GENERAL);          /*(7) */
+            Add_byte(&instr, KHRN_HW_INSTR_LOAD_GENERAL);          /*(7) */
 
             flags = 1;      /* load = colour */
             if (khrn_image_is_tformat(fb->col_format)) flags |= (1 << 4);
@@ -1292,10 +1294,10 @@ the end of the buffer */
 
          if (load_standard && load_full)
          {
-            add_byte(&instr, KHRN_HW_INSTR_STORE_GENERAL);          //(7)
+            Add_byte(&instr, KHRN_HW_INSTR_STORE_GENERAL);          //(7)
             add_short(&instr, 0 | 1 << 13 | 1 << 14);      /* store = none. disable colour & depth clear */
             add_word(&instr, 0);                           /* no address needed */
-            add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);      //(3)
+            Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);      //(3)
             add_byte(&instr, x);
             add_byte(&instr, y);
          }
@@ -1312,7 +1314,7 @@ the end of the buffer */
 
             vcos_assert(full_load_offset + full_stride * (y * render_state->num_tiles_x + x) < mem_get_size(full_handle));
 
-            add_byte(&instr, KHRN_HW_INSTR_LOAD_FULL);          //(5)
+            Add_byte(&instr, KHRN_HW_INSTR_LOAD_FULL);          //(5)
 
             flags = 0;
             if (!load_full_color || !fb->ms) flags |= 1<<0; /* disable colour read */
@@ -1327,15 +1329,15 @@ the end of the buffer */
          }
 #endif
 
-         add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);   //(3)
+         Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);   //(3)
          add_byte(&instr, x);
          add_byte(&instr, y);
 
          /* Ensure primitive format is reset. TODO: is this necessary? */
-         add_byte(&instr, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT); //(2)
+         Add_byte(&instr, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT); //(2)
          add_byte(&instr, 0x12);   /* 16 bit triangle */
 
-         add_byte(&instr, KHRN_HW_INSTR_BRANCH_SUB);          //(5)
+         Add_byte(&instr, KHRN_HW_INSTR_BRANCH_SUB);          //(5)
 
          if (! glxx_big_mem_add_special(&instr,
                      KHRN_FMEM_SPECIAL_BIN_MEM,
@@ -1360,7 +1362,7 @@ the end of the buffer */
             if (!store_full_color || !fb->ms) flags |= 1<<0; /* disable colour write */
             if (!store_full_depth) flags |= 1<<1;            /* disable depth write */
 
-            add_byte(&instr, KHRN_HW_INSTR_STORE_FULL);          //(5)
+            Add_byte(&instr, KHRN_HW_INSTR_STORE_FULL);          //(5)
 
             if (! glxx_big_mem_add_fix(&instr,
                         full_handle,
@@ -1369,14 +1371,14 @@ the end of the buffer */
                return false;
             }
 
-            add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);   //(3)
+            Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);   //(3)
             add_byte(&instr, x);
             add_byte(&instr, y);
          }
 #endif
 
          if (x == render_state->num_tiles_x - 1 && y == render_state->num_tiles_y - 1) {
-            add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);     // (1). Last tile needs special store instruction
+            Add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);     // (1). Last tile needs special store instruction
             render_state->hw_frame_count++;
          }
 #ifdef WORKAROUND_HW2136
@@ -1386,9 +1388,9 @@ the end of the buffer */
                size is > 1024 in height */
 
             /* HW-2136 workaround */
-            add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);
+            Add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);
             render_state->hw_frame_count++;
-            add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);    //(11)
+            Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);    //(11)
 
             if (! khrn_fmem_add_fix(render_state->fmem, &instr, color_image->mh_storage, 4 * 1024 * 32 * render_state->num_tiles_x) )
                return false;
@@ -1404,15 +1406,15 @@ the end of the buffer */
             add_byte(&instr, 0);     // unused
 
             // All frames must start with a dummy tile.
-            add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);            //(3)
+            Add_byte(&instr, KHRN_HW_INSTR_STATE_TILE_COORDS);            //(3)
             add_byte(&instr, 0);
             add_byte(&instr, 0);
-            add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE);              //(1)
+            Add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE);              //(1)
          }
 #endif
          else
          {
-            add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE);
+            Add_byte(&instr, KHRN_HW_INSTR_STORE_SUBSAMPLE);
          }
 
          INCR_DRIVER_COUNTER(tb_color_stores);
@@ -1471,7 +1473,7 @@ static bool draw_rect(
    /*
     * Emit scissor/clipper/viewport instructions
     */
-   add_byte(&instr, KHRN_HW_INSTR_STATE_CLIP);     //(9)
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_CLIP);     //(9)
    add_short(&instr, x);
 #ifdef BCG_FB_LAYOUT
    if (rso_format)
@@ -1486,7 +1488,7 @@ static bool draw_rect(
    /*
     * Emit a Configuration record
     */
-   add_byte(&instr, KHRN_HW_INSTR_STATE_CFG);     /*(4) */
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_CFG);     /*(4) */
 #ifdef BCG_FB_LAYOUT
    if (rso_format)
       add_byte(&instr, 1 | 1<<1 | 1<<2);   /* enfwd, enrev, cwise */
@@ -1508,7 +1510,7 @@ static bool draw_rect(
 #endif
    state->changed_cfg = true;       /* Clear and render probably use different configs */
 
-   add_byte(&instr, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);  //(5)
+   Add_byte(&instr, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);  //(5)
    add_short(&instr, 0);
    add_short(&instr, 0);
 
@@ -1643,7 +1645,7 @@ static bool draw_rect(
    rec[3] = khrn_hw_addr(khrn_hw_alias_direct(vdata));   //PTR
    locked_addr += 4;
 
-   add_byte(&instr, KHRN_HW_INSTR_NV_SHADER);     //(5)
+   Add_byte(&instr, KHRN_HW_INSTR_NV_SHADER);     //(5)
    add_pointer(&instr, rec);
 
 /*#ifdef SIMPENROSE_RECORD_OUTPUT
@@ -1656,12 +1658,12 @@ static bool draw_rect(
     */
 
    // Emit a GLDRAWARRAYS instruction
-   add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
+   Add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
    add_byte(&instr, 6);                         //Primitive mode (triangle_fan)
    add_word(&instr, 4);                         //Length (number of vertices)
    add_word(&instr, 0);                         //Index of first vertex
 
-   add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
 
 #ifdef SIMPENROSE_WRITE_LOG
    // Increment batch count

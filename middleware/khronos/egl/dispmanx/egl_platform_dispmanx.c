@@ -1,3 +1,4 @@
+#if 0
 /* ============================================================================
 Copyright (c) 2008-2014, Broadcom Corporation
 All rights reserved.
@@ -14,10 +15,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifdef DIRECT_RENDERING
 #include "interface/khronos/include/EGL/eglext_brcm.h" /* for DIRECT_RENDERING */
 #endif
-#include "middleware/dispmanx/dispmanx.h"
+//#include "middleware/dispmanx/dispmanx.h"
+//#include "interface/vmcs_host/vc_dispmanx.h"
+//#include "interface/vmcs_host/vc_dispmanx_types.h"
 #include "helpers/vc_image/vc_image.h"
 
-#include "vcfw/logging/logging.h"
+//#include "vcfw/logging/logging.h"
 #include "interface/vchi/os/os.h"
 
 #include "helpers/vclib/vclib.h"
@@ -658,3 +661,6 @@ void egl_server_platform_shutdown(void)
 void egl_server_platform_set_position(uint32_t win, uint32_t position, uint32_t width, uint32_t height)
 {
 }
+
+
+#endif

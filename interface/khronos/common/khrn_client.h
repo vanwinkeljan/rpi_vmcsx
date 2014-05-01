@@ -23,9 +23,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "applications/vmcs/khronos/khronos_server.h"
 #endif
 
-#ifdef ANDROID
+//#ifdef ANDROID
 extern void *platform_tls_get_check(PLATFORM_TLS_T tls);
-#endif
+//#endif
 
 /* must be after EGL/eglext.h */
 #if EGL_BRCM_global_image && EGL_KHR_image

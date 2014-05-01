@@ -18,8 +18,8 @@ extern unsigned int memory_pool_size;
 #else // ANDROID
 
 #define MM_DATA_INCLUDED
-#include "nandsdram_memmap.h"
-#include "osheap.h"
+//#include "nandsdram_memmap.h"
+//#include "osheap.h"
 
 #if defined( MM_DATA_INCLUDED )
 extern int Image$$ER_MMDATA$$Base;

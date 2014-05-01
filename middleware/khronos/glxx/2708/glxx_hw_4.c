@@ -936,7 +936,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
       instr = glxx_big_mem_alloc_cle(32);
       if (!instr) goto fail;
    
-      add_byte(&instr, KHRN_HW_INSTR_STATE_CLIP);     //(9)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_CLIP);     //(9)
       add_short(&instr, x);
 #ifdef BCG_FB_LAYOUT
       if (state->shader.common.rso_format)
@@ -947,7 +947,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
       add_short(&instr, xmax - x);
       add_short(&instr, ymax - y);
    
-      add_byte(&instr, KHRN_HW_INSTR_STATE_CLIPPER_XY);   //(9)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_CLIPPER_XY);   //(9)
       add_float(&instr, 8.0f * (float)state->viewport.width);
 #ifdef BCG_FB_LAYOUT
       if (state->shader.common.rso_format)
@@ -956,7 +956,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
 #endif /* BCG_FB_LAYOUT */
       add_float(&instr, 8.0f * (float)state->viewport.height);
    
-      add_byte(&instr, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);  //(5)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);  //(5)
       add_short(&instr, 8 * (2*state->viewport.x + state->viewport.width));
 #ifdef BCG_FB_LAYOUT
       if (state->shader.common.rso_format)
@@ -965,7 +965,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
 #endif /* BCG_FB_LAYOUT */
       add_short(&instr, 8 * (2*state->viewport.y + state->viewport.height));
    
-      add_byte(&instr, KHRN_HW_INSTR_STATE_CLIPPER_Z);    //(9)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_CLIPPER_Z);    //(9)
       add_float(&instr, 0.5f * (state->viewport.far + state->viewport.near));
       add_float(&instr, 0.5f * (state->viewport.far - state->viewport.near));
       
@@ -1008,7 +1008,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
       instr = glxx_big_mem_alloc_cle(4);
       if (!instr) goto fail;
    
-      add_byte(&instr, KHRN_HW_INSTR_STATE_CFG);     //(4)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_CFG);     //(4)
       add_byte(&instr, enfwd | enrev << 1 | cwise << 2 | endo << 3 | rasosm << 6);
       add_byte(&instr, zfunc << 4 | enzu << 7);
       add_byte(&instr, enez | 1<<1);
@@ -1021,7 +1021,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
       instr = glxx_big_mem_alloc_cle(5);
       if (!instr) goto fail;
 
-      add_byte(&instr, KHRN_HW_INSTR_STATE_DEPTH_OFFSET);    //(5)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_DEPTH_OFFSET);    //(5)
       add_short(&instr, float_to_bits(state->polygon_offset.factor) >> 16);
       add_short(&instr, float_to_bits(state->polygon_offset.units) >> 16);
       state->changed_polygon_offset = false;
@@ -1032,7 +1032,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
       instr = glxx_big_mem_alloc_cle(5);
       if (!instr) goto fail;
 
-      add_byte(&instr,KHRN_HW_INSTR_STATE_LINE_WIDTH);   //(5)
+      Add_byte(&instr,KHRN_HW_INSTR_STATE_LINE_WIDTH);   //(5)
       add_float(&instr, state->line_width);
       state->changed_linewidth = false;
    }
@@ -1043,7 +1043,7 @@ static bool do_changed_cfg(GLXX_SERVER_STATE_T *state, GLXX_HW_FRAMEBUFFER_T *fb
       instr = glxx_big_mem_alloc_cle(5);
       if (!instr) goto fail;
 
-      add_byte(&instr, KHRN_HW_INSTR_STATE_FLATSHADE);       //(5)
+      Add_byte(&instr, KHRN_HW_INSTR_STATE_FLATSHADE);       //(5)
       add_word(&instr, flat_shading_flags);
       state->old_flat_shading_flags = flat_shading_flags;
    }
@@ -1175,7 +1175,7 @@ if ((state->shader_record_addr != NULL) &&(state->pres_mode == state->batch.prim
 		  if (!instr) goto fail;
 		  
 		  // Emit a GLDRAWELEMENTS instruction
-		  add_byte(&instr, KHRN_HW_INSTR_GLDRAWELEMENTS);	//(14)
+		  Add_byte(&instr, KHRN_HW_INSTR_GLDRAWELEMENTS);	//(14)
 		  add_byte(&instr,
 			 convert_primitive_type(state->batch.primitive_mode) |	 //Primitive mode
 			 convert_index_type(type) << 4);  //Index type
@@ -1188,12 +1188,12 @@ if ((state->shader_record_addr != NULL) &&(state->pres_mode == state->batch.prim
 #endif
 		  add_word(&instr, _min(max_index, 0xffff));	//Maximum index (primitives using a greater index will cause error)
 	
-	add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
-	add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
-	add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
-	add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
-	add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
-	add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
+	Add_byte(&instr, KHRN_HW_INSTR_NOP);		//(1) TODO: is this necessary?
 	   goto skip_install;
 }
    /* TODO: only allocate space for as many vertex attributes as we need */
@@ -1400,23 +1400,23 @@ if ((state->shader_record_addr != NULL) &&(state->pres_mode == state->batch.prim
          instr = glxx_big_mem_alloc_cle(20);
          if (!instr) goto fail;
          
-         add_byte(&instr, KHRN_HW_INSTR_GL_SHADER);     //(5)
+         Add_byte(&instr, KHRN_HW_INSTR_GL_SHADER);     //(5)
          add_pointer(&instr, (uint8_t *)shader_record + (attr_count & 7));
          
 		 state->shader_record_addr = 0;
 		 state->pres_mode = 0;
          // Emit a GLDRAWARRAYS instruction
-         add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
+         Add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
          add_byte(&instr, convert_primitive_type(state->batch.primitive_mode));  //Primitive mode
          add_word(&instr, batch_count);       //Length (number of vertices)
          add_word(&instr, batch_indices_offset);            //Index of first vertex
    
-         add_byte(&instr, KHRN_HW_INSTR_NOP);         //Pad to the same length as KHRN_HW_INSTR_GLDRAWELEMENTS to make it easier for ourselves
-         add_byte(&instr, KHRN_HW_INSTR_NOP);
-         add_byte(&instr, KHRN_HW_INSTR_NOP);
-         add_byte(&instr, KHRN_HW_INSTR_NOP);
+         Add_byte(&instr, KHRN_HW_INSTR_NOP);         //Pad to the same length as KHRN_HW_INSTR_GLDRAWELEMENTS to make it easier for ourselves
+         Add_byte(&instr, KHRN_HW_INSTR_NOP);
+         Add_byte(&instr, KHRN_HW_INSTR_NOP);
+         Add_byte(&instr, KHRN_HW_INSTR_NOP);
          
-         add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?         
+         Add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
 
          vcos_assert(step <= (uint32_t)count);
          
@@ -1462,13 +1462,13 @@ if ((state->shader_record_addr != NULL) &&(state->pres_mode == state->batch.prim
       instr = glxx_big_mem_alloc_cle(20);
       if (!instr) goto fail;
       
-      add_byte(&instr, KHRN_HW_INSTR_GL_SHADER);     //(5)
+      Add_byte(&instr, KHRN_HW_INSTR_GL_SHADER);     //(5)
       add_pointer(&instr, (uint8_t *)shader_record + (attr_count & 7));
 	  state->shader_record_addr = (uint32_t *)((uint8_t *)shader_record + (attr_count & 7));
 	  state->pres_mode = state->batch.primitive_mode;
 
       // Emit a GLDRAWELEMENTS instruction
-      add_byte(&instr, KHRN_HW_INSTR_GLDRAWELEMENTS);   //(14)
+      Add_byte(&instr, KHRN_HW_INSTR_GLDRAWELEMENTS);   //(14)
       add_byte(&instr,
          convert_primitive_type(state->batch.primitive_mode) |   //Primitive mode
          convert_index_type(type) << 4);  //Index type
@@ -1485,7 +1485,7 @@ if ((state->shader_record_addr != NULL) &&(state->pres_mode == state->batch.prim
       vcos_assert(type == GL_UNSIGNED_SHORT);
       record_map_buffer(indices, 2 * count, L_INDICES, RECORD_BUFFER_IS_BOTH, 2);
 #endif*/
-   add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
    }
 
 
@@ -2046,6 +2046,9 @@ static bool install_uniforms(
    ptr = glxx_big_mem_alloc_junk(4 * count, 4);
    if (!ptr) return false;
    *startaddr_location = khrn_hw_addr(khrn_hw_alias_direct(ptr)); //PTR
+#ifdef MEGA_DEBUG
+   ALOGI("uniform installed %p=%08x\n", startaddr_location, khrn_hw_addr(khrn_hw_alias_direct(ptr)));
+#endif
 
 #ifdef SIMPENROSE_RECORD_OUTPUT
    record_map_buffer(khrn_hw_addr(ptr), 4*count, L_UNIFORMS, (count==0) ? RECORD_BUFFER_IS_BOTH : RECORD_BUFFER_IS_CLIF, 4);
@@ -2815,24 +2818,24 @@ bool glxx_hw_draw_tex(GLXX_SERVER_STATE_T *state, float Xs, float Ys, float Zw, 
    instr = glxx_big_mem_alloc_cle(20);
    if (!instr) goto fail;
    
-   add_byte(&instr, KHRN_HW_INSTR_GL_SHADER);     //(5)
+   Add_byte(&instr, KHRN_HW_INSTR_GL_SHADER);     //(5)
    add_pointer(&instr, (uint8_t *)shader_record + (attr_count & 7));
    
    // Emit a GLDRAWARRAYS instruction
-   add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
+   Add_byte(&instr, KHRN_HW_INSTR_GLDRAWARRAYS);
    add_byte(&instr, convert_primitive_type(GL_TRIANGLE_FAN));  //Primitive mode
    add_word(&instr, 4);       //Length (number of vertices)
    add_word(&instr, 0);            //Index of first vertex
 
-   add_byte(&instr, KHRN_HW_INSTR_NOP);         //Pad to the same length as KHRN_HW_INSTR_GLDRAWELEMENTS to make it easier for ourselves
-   add_byte(&instr, KHRN_HW_INSTR_NOP);
-   add_byte(&instr, KHRN_HW_INSTR_NOP);
-   add_byte(&instr, KHRN_HW_INSTR_NOP);
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);         //Pad to the same length as KHRN_HW_INSTR_GLDRAWELEMENTS to make it easier for ourselves
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);
    
-   add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?         
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
 
 
-   add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
+   Add_byte(&instr, KHRN_HW_INSTR_NOP);        //(1) TODO: is this necessary?
 
 #ifdef SIMPENROSE_WRITE_LOG
    // Increment batch count

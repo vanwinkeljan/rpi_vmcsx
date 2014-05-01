@@ -7,11 +7,24 @@ Redistribution and use in source and binary forms, with or without modification,
 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ============================================================================ */
+
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <list>
+
 extern "C" {
 #include "rtos_common_mem.h"
 #include "rtos_common_mem_priv.h"
 unsigned int khrn_hw_addr(const void *addr);
 void *khrn_hw_unaddr(uint32_t addr);
+
+//sjh
+void mem_set_desc(MEM_HANDLE_T handle, const char *desc)
+{
+}
+
 }
 
 #include "list.h"
@@ -156,6 +169,8 @@ private:
 
 };
 
+static std::list<MemHeader *> *g_pAllocs = 0;
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -183,7 +198,7 @@ private:
 	}
 
 	GhwMemHandleMalloc::~GhwMemHandleMalloc() {
-		delete [] virtAddr;
+		delete [] (char *)virtAddr;
 		
 		refCnt =0;
 		lockCnt =0;
@@ -314,8 +329,8 @@ void mem_get_default_partition(void **mempool_base, uint32_t *mempool_size, void
 int mem_init(void *mempool_base, uint32_t mempool_size, void *mempool_handles_base, uint32_t mempool_handles_size)
 {
 	/* open the new allocator instance and initialize */
-	mem_allocator = GhwMemAllocator::create(GhwMemAllocator::GHW_MEM_ALLOC_RETAIN_NONE, 4*1024*1024, 4);
-	mem_allocator1 = GhwMemAllocator::create(GhwMemAllocator::GHW_MEM_ALLOC_RETAIN_NONE, 1*1024*1024, 4);
+	mem_allocator = GhwMemAllocator::create(GhwMemAllocator::GHW_MEM_ALLOC_RETAIN_NONE, 4*1024*1024, 4/*, true*/);
+	mem_allocator1 = GhwMemAllocator::create(GhwMemAllocator::GHW_MEM_ALLOC_RETAIN_NONE, 1*1024*1024, 4/*, true*/);
 			
 	if (mem_allocator == NULL) {
 		ALOGE("GhwMemAllocator::create failed \n");
@@ -365,7 +380,89 @@ void mem_compact(mem_compact_mode_t mode) {
 #ifdef FILE_DUMP	
 	fprintf(fp_dump, "mem_compact %x\n", mode);
 #endif
+	int changed;
+
+	do
+	{
+		std::list<MemHeader *>::iterator it;
+		changed = 0;
+
+		for (it = g_pAllocs->begin(); it != g_pAllocs->end(); it++)
+			if (*it && (*it)->getRefCnt() == 1 && (*it)->getLockCnt() == 0 && (*it)->getRetainCnt() == 0)
+			{
+				MemHeader *h = *it;
+				g_pAllocs->remove(h);
+
+				while (h->getRefCnt())
+					h->release();
+
+				changed = 1;
+				break;
+			}
+	} while (changed == 1);
+
 	return;
+}
+
+extern "C" void comp(void)
+{
+//	mem_compact(MEM_COMPACT_ALL);
+}
+
+extern "C" void *get_image_buffer(int b);
+
+extern "C" MEM_HANDLE_T allocate_image(unsigned int id)
+{
+	class ImageHandle : public ghw::GhwMemHandle {
+	public:
+		ImageHandle(void *p) :
+			GhwMemHandle(),
+			m_pVa(p)
+		{
+		}
+
+	    virtual ~ImageHandle()
+	    {
+	    }
+
+	    virtual    ghw::ghw_error_e     acquire()
+	    {
+	    	return ghw::GHW_ERROR_NONE;
+	    }
+
+	    virtual    ghw::ghw_error_e     release()
+	    {
+	    	return ghw::GHW_ERROR_NONE;
+	    }
+
+	    virtual    ghw_error_e     lock(u32& ipa_addr, void*& virt_addr, u32& size)
+	    {
+	    	virt_addr = m_pVa;
+	    	ipa_addr = (unsigned int)m_pVa;
+
+	    	return ghw::GHW_ERROR_NONE;
+	    }
+
+	    virtual    ghw_error_e     unlock()
+	    {
+	    	return ghw::GHW_ERROR_NONE;
+	    }
+
+	    virtual    ghw_error_e     setName(const char *name)
+	    {
+	    	return ghw::GHW_ERROR_NONE;
+	    }
+
+	    virtual    ghw_error_e     dump(u32 level = 0)
+	    {
+	    	return ghw::GHW_ERROR_NONE;
+	    }
+
+	    void *m_pVa;
+	};
+
+	MemHeader *header = new MemHeader(new ImageHandle(get_image_buffer(id)), 0, 0, MEM_FLAG_NONE);
+	return (MEM_HANDLE_T)header;
 }
 
 MEM_HANDLE_T mem_alloc_ex(uint32_t size, uint32_t align, MEM_FLAG_T flags, const char *desc, mem_compact_mode_t mode)
@@ -405,6 +502,11 @@ MEM_HANDLE_T mem_alloc_ex(uint32_t size, uint32_t align, MEM_FLAG_T flags, const
 	
 	MemHeader *header = new MemHeader(handle,size,align,flags);
 
+	if (g_pAllocs == 0)
+		g_pAllocs = new std::list<MemHeader *>;
+
+	g_pAllocs->push_back(header);
+
 
 	if ((flags & MEM_FLAG_NO_INIT) == 0) {
 		header->lock();
@@ -429,7 +531,12 @@ unsigned int khrn_hw_addr(const void *addr)
 		MemHeader* header = head->get();
 		unsigned int va = (unsigned int)header->getVirt();
 		if ( (va <= virt) && (virt <= va + header->getSize()) ) {
-				return header->getPhys() + (virt-va);
+				unsigned int out = header->getPhys() + (virt-va);
+
+				if (out == 0)
+					ALOGI("input of %p out of ZERO!\n", addr);
+
+				return out;
 			}
 		head = head->getNext();
 	}
@@ -438,6 +545,10 @@ unsigned int khrn_hw_addr(const void *addr)
 	if (result != GHW_ERROR_NONE) {
 		result = mem_allocator1->virt2phys(phys, (void*)virt);
 	}	
+
+	if (phys == 0)
+		ALOGI("input of %p out of ZERO!\n", addr);
+
 	return phys;
 }
 
@@ -466,7 +577,6 @@ void *khrn_hw_unaddr(uint32_t addr)
 	}	
 	return virt;
 }
-
 
 MEM_HANDLE_T mem_wrap(void *p, uint32_t phys,uint32_t size, uint32_t align, MEM_FLAG_T flags, const char *desc)
 {

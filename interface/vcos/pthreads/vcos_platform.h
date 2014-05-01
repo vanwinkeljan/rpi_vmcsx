@@ -23,6 +23,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 extern "C" {
 #endif
 
+#define __USE_POSIX199309
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
@@ -33,7 +34,7 @@ extern "C" {
 #include <string.h>
 #include <time.h>
 #include <signal.h>
-
+#include <stdio.h>
 
 #define VCOS_HAVE_RTOS         1
 #define VCOS_HAVE_SEMAPHORE    1
@@ -286,6 +287,13 @@ VCOS_UNSIGNED vcos_thread_get_priority(VCOS_THREAD_T *thread) {
 
 
 VCOS_INLINE_IMPL
+VCOS_UNSIGNED vcos_thread_get_affinity(VCOS_THREAD_T *thread) {
+	printf("vcos_thread_get_affinity %s %d\n", __FILE__, __LINE__);
+  return _VCOS_AFFINITY_CPU0;
+}
+
+
+VCOS_INLINE_IMPL
 void vcos_thread_attr_setaffinity(VCOS_THREAD_ATTR_T *attrs, VCOS_UNSIGNED affinity) {
    attrs->ta_affinity = affinity;
 }
@@ -487,7 +495,7 @@ void vcos_event_delete(VCOS_EVENT_T *event)
 VCOS_INLINE_IMPL
 VCOS_UNSIGNED vcos_process_id_current(void) {
 #ifdef BRCM_V3D_OPT
-   return (VCOS_UNSIGNED) gettid();
+   return (VCOS_UNSIGNED) pthread_self();//gettid();
 #else
    return (VCOS_UNSIGNED) getpid();
 #endif

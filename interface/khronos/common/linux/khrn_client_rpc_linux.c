@@ -79,7 +79,7 @@ VCHIQ_STATUS_T khhn_callback(VCHIQ_REASON_T reason, VCHIQ_HEADER_T *header,
    case VCHIQ_SERVICE_CLOSED:
    case VCHIQ_BULK_TRANSMIT_ABORTED:
    case VCHIQ_BULK_RECEIVE_ABORTED:
-      UNREACHABLE(); /* not implemented */      
+      UNREACHABLE(); /* not implemented */
    }
 
    return VCHIQ_SUCCESS;
@@ -138,7 +138,8 @@ VCHIQ_STATUS_T khan_callback(VCHIQ_REASON_T reason, VCHIQ_HEADER_T *header,
    case VCHIQ_SERVICE_CLOSED:
    case VCHIQ_BULK_TRANSMIT_ABORTED:
    case VCHIQ_BULK_RECEIVE_ABORTED:
-      UNREACHABLE(); /* not implemented */      
+      UNREACHABLE(); /* not implemented */
+   }
    }
 
    return VCHIQ_SUCCESS;
@@ -148,11 +149,11 @@ void vc_vchi_khronos_init()
 {
    VCOS_STATUS_T status = vcos_event_create(&bulk_event, NULL);
    vcos_assert(status == VCOS_SUCCESS);
-   
+
    if (vchiq_initialise(&khrn_vchiq_instance) != VCHIQ_SUCCESS)
    {
       KHRONOS_CLIENT_LOG("* failed to open vchiq device\n");
-      
+
       exit(1);
    }
 
@@ -161,7 +162,7 @@ void vc_vchi_khronos_init()
    if (vchiq_connect(khrn_vchiq_instance) != VCHIQ_SUCCESS)
    {
       KHRONOS_CLIENT_LOG("* failed to connect\n");
-      
+
       exit(1);
    }
 
@@ -170,7 +171,7 @@ void vc_vchi_khronos_init()
        vchiq_open_service(khrn_vchiq_instance, FOURCC_KHHN, khhn_callback, NULL, &vchiq_khhn_service) != VCHIQ_SUCCESS)
    {
       KHRONOS_CLIENT_LOG("* failed to add service - already in use?\n");
-      
+
       exit(1);
    }
 

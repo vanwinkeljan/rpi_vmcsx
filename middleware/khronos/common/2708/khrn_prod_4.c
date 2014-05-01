@@ -23,6 +23,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdio.h>
+
 #include "interface/khronos/common/khrn_int_common.h"
 #include "middleware/khronos/common/2708/khrn_prod_4.h"
 #include "middleware/khronos/common/2708/khrn_pool_4.h"
@@ -33,6 +36,9 @@ extern "C" {
 #include "middleware/khronos/common/khrn_stats.h"
 #include "interface/khronos/common/khrn_int_util.h"
 #include "middleware/khronos/egl/egl_disp.h"
+
+#include "interface/khronos/common/cache_cache.h"
+
 #ifndef SIMPENROSE
    #include "vcfw/drivers/chip/v3d.h"
 #endif
@@ -552,9 +558,68 @@ static void acquire_callback(void *p);
 static void khrn_hw_isr(uint32_t flags);
 static void khrn_hw_llat_callback(void);
 #ifdef BRCM_V3D_OPT
-static fd_v3d = -1;
+FILE *fd_v3d = 0;
 static MEM_HANDLE_T g_bin_mems_head = 0;
 #endif
+
+static char *mapping[116];
+void build_mapping(void)
+{
+	int count;
+	for (count = 0; count < 116; count++)
+		mapping[count] = "reserved!";
+
+	mapping[0] = "KHRN_HW_INSTR_HALT";
+	mapping[1] = "KHRN_HW_INSTR_NOP";
+	mapping[2] = "KHRN_HW_INSTR_MARKER";
+	mapping[3] = "KHRN_HW_INSTR_RESET_MARKER_COUNT";
+	mapping[4] = "KHRN_HW_INSTR_FLUSH";
+	mapping[5] = "KHRN_HW_INSTR_FLUSH_ALL_STATE";
+	mapping[6] = "KHRN_HW_INSTR_START_TILE_BINNING";
+	mapping[7] = "KHRN_HW_INSTR_INCR_SEMAPHORE";
+	mapping[8] = "KHRN_HW_INSTR_WAIT_SEMAPHORE";
+	mapping[16] = "KHRN_HW_INSTR_BRANCH";
+	mapping[17] = "KHRN_HW_INSTR_BRANCH_SUB";
+	mapping[18] = "KHRN_HW_INSTR_RETURN";
+	mapping[19] = "KHRN_HW_INSTR_REPEAT_START_MARKER";
+	mapping[20] = "KHRN_HW_INSTR_REPEAT_FROM_START_MARKER";
+	mapping[24] = "KHRN_HW_INSTR_STORE_SUBSAMPLE";
+	mapping[25] = "KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF";
+	mapping[26] = "KHRN_HW_INSTR_STORE_FULL";
+	mapping[27] = "KHRN_HW_INSTR_LOAD_FULL";
+	mapping[28] = "KHRN_HW_INSTR_STORE_GENERAL";
+	mapping[29] = "KHRN_HW_INSTR_LOAD_GENERAL";
+	mapping[32] = "KHRN_HW_INSTR_GLDRAWELEMENTS";
+	mapping[33] = "KHRN_HW_INSTR_GLDRAWARRAYS";
+	mapping[41] =  "KHRN_HW_INSTR_VG_COORD_LIST";
+	mapping[48] = "KHRN_HW_INSTR_COMPRESSED_LIST";
+	mapping[49] = "KHRN_HW_INSTR_CLIPPED_PRIM";
+	mapping[56] = "KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT";
+	mapping[64] = "KHRN_HW_INSTR_GL_SHADER";
+	mapping[65] = "KHRN_HW_INSTR_NV_SHADER";
+	mapping[66] = "KHRN_HW_INSTR_VG_SHADER";
+	mapping[65] = "KHRN_HW_INSTR_INLINE_VG_SHADER";
+	mapping[96] = "KHRN_HW_INSTR_STATE_CFG";
+	mapping[97] = "KHRN_HW_INSTR_STATE_FLATSHADE";
+	mapping[98] = "KHRN_HW_INSTR_STATE_POINT_SIZE";
+	mapping[99] = "KHRN_HW_INSTR_STATE_LINE_WIDTH";
+	mapping[100] = "KHRN_HW_INSTR_STATE_RHTX";
+	mapping[101] = "KHRN_HW_INSTR_STATE_DEPTH_OFFSET";
+	mapping[102] = "KHRN_HW_INSTR_STATE_CLIP";
+	mapping[103] = "KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET";
+	mapping[104] = "KHRN_HW_INSTR_STATE_CLIPZ";
+	mapping[105] = "KHRN_HW_INSTR_STATE_CLIPPER_XY";
+	mapping[106] = "KHRN_HW_INSTR_STATE_CLIPPER_Z";
+	mapping[112] = "KHRN_HW_INSTR_STATE_TILE_BINNING_MODE";
+	mapping[113] = "KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE";
+	mapping[114] = "KHRN_HW_INSTR_STATE_CLEARCOL";
+	mapping[115] = "KHRN_HW_INSTR_STATE_TILE_COORDS";
+}
+
+char *get_mapping(int n)
+{
+	return mapping[n];
+}
 
 bool khrn_hw_init(void)
 {
@@ -575,7 +640,7 @@ bool khrn_hw_init(void)
    }
    begin = (uint8_t *)mem_lock(null_render_handle);
    p = begin;
-   add_byte(&p, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);
+   Add_byte(&p, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);
 #define NULL_RENDER_FRAME_OFFSET 1
    vcos_assert((begin + NULL_RENDER_FRAME_OFFSET) == p);
    ADD_WORD(p, 0); /* frame */
@@ -587,16 +652,16 @@ bool khrn_hw_init(void)
       (1 << 2) | /* 32-bit rso */
       (0 << 4))); /* 1x decimate (ie none) */
    add_byte(&p, 0); /* unused */
-   add_byte(&p, KHRN_HW_INSTR_WAIT_SEMAPHORE);
+   Add_byte(&p, KHRN_HW_INSTR_WAIT_SEMAPHORE);
 #define NULL_RENDER_POST_WAIT_SEMAPHORE_OFFSET 12
    vcos_assert((begin + NULL_RENDER_POST_WAIT_SEMAPHORE_OFFSET) == p);
-   add_byte(&p, KHRN_HW_INSTR_STATE_TILE_COORDS);
+   Add_byte(&p, KHRN_HW_INSTR_STATE_TILE_COORDS);
    add_byte(&p, 0);
    add_byte(&p, 0);
 #ifdef __BCM2708A0__
-   add_byte(&p, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);
+   Add_byte(&p, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);
 #else
-   add_byte(&p, KHRN_HW_INSTR_STORE_GENERAL);
+   Add_byte(&p, KHRN_HW_INSTR_STORE_GENERAL);
    add_byte(&p, 0); /* no buffer */
    add_byte(&p, 0xe0); /* don't clear any buffers */
    ADD_WORD(p, 1 << 3); /* eof */
@@ -632,11 +697,16 @@ bool khrn_hw_init(void)
    khrn_hw_render_exit_pos_1 = 0;
 
 #ifdef BRCM_V3D_OPT
-	fd_v3d = open("/dev/v3d", O_RDONLY);
-	if(fd_v3d < 0) {
-		ALOGE("Could not open v3d device from khrn_prod_4");
-		return false;
-	}
+#ifdef __ARMEL__
+   if (!fd_v3d)
+   {
+		fd_v3d = fopen("/dev/dmaer_4k", "r+b");
+		if(!fd_v3d) {
+			ALOGE("Could not open v3d device from khrn_prod_4");
+			return false;
+		}
+   }
+#endif
 	g_bin_mems_head =  mem_alloc_ex(BIN_MEM_SIZE, KHRN_HW_BIN_MEM_ALIGN, (MEM_FLAG_T)(MEM_FLAG_DIRECT | MEM_FLAG_NO_INIT | MEM_FLAG_RETAINED), "khrn_hw_bin_mem (too cool for pool)", MEM_COMPACT_NONE);
 #else
    {
@@ -657,7 +727,7 @@ void khrn_hw_term(void)
 
 #ifdef BRCM_V3D_OPT
 	if(g_bin_mems_head) mem_release(g_bin_mems_head);
-	close(fd_v3d);
+	fclose(fd_v3d);
 #else
    verify(v3d_get_func_table()->close(v3d_driver_handle) == 0);
 
@@ -692,7 +762,7 @@ static int job_id=16;
 
 // #define DEBUG_DUMP_CL
 #ifdef DEBUG_DUMP_CL
-#define FILE_DUMP
+//#define FILE_DUMP
 
 #define DBG_MAX_NUM_LISTS	(100)
 #define DBG_MAX_LIST_SIZE	(4*1024)
@@ -769,8 +839,8 @@ static void dbg_list_store_job (v3d_job_post_t *p_job_post, int start, unsigned 
 	dbg_list_hdr[idx].bin_size = bin_size;
 	dbg_list_hdr[idx].rend_start = (start+bin_size);
 	dbg_list_hdr[idx].rend_size = rend_size;
-	p_job_post->reserved[0] = bin_addr;
-	p_job_post->reserved[1] = rend_addr;
+//	p_job_post->reserved[0] = bin_addr;
+//	p_job_post->reserved[1] = rend_addr;
 	memcpy(&dbg_list_hdr[idx].job_post, p_job_post, sizeof(v3d_job_post_t));
 	memcpy(&dbg_data[start], bin_addr, bin_size);
 	memcpy(&dbg_data[start+bin_size], rend_addr, rend_size);
@@ -876,6 +946,23 @@ static int dbg_list (v3d_job_post_t *p_job_post, unsigned char *bin_addr, unsign
 
 #endif /* BRCM_V3D_OPT */
 
+unsigned int _bin_start, _bin_end;
+
+#define MAX_IMAGES 3
+
+unsigned int used_images = 0;
+unsigned char *images[MAX_IMAGES];
+unsigned int types[MAX_IMAGES];
+unsigned int widths[MAX_IMAGES];
+unsigned int heights[MAX_IMAGES];
+unsigned int pitches[MAX_IMAGES];
+
+void update_dispmanx_image(void *p, VC_IMAGE_TYPE_T type, int width, int height, int pitch);
+//void update_dispmanx_image(void *p);
+
+extern unsigned int overflowPa;
+extern unsigned int overflowSize;
+
 #ifdef BRCM_V3D_OPT
 void *khrn_hw_queue(
    uint8_t *bin_begin, uint8_t *bin_end, KHRN_HW_CC_FLAG_T bin_cc,
@@ -893,7 +980,6 @@ void *khrn_hw_queue(
    UNUSED_NDEBUG(callback_data_size);
 
    vcos_assert(callback);
-
 
    v3d_job_post_t job_post;
    v3d_job_status_t job_status;
@@ -948,8 +1034,20 @@ void *khrn_hw_queue(
    job_post.v3d_ct0ea = khrn_hw_addr(bin_end);
    job_post.v3d_ct1ca = khrn_hw_addr(render_begin);
    job_post.v3d_ct1ea = khrn_hw_addr(render_end);
+
+   //sjh
+   job_post.m_pOverspill = (void *)overflowPa;
+   job_post.m_overspillSize = overflowSize;
+
    job_status.job_status = V3D_JOB_STATUS_INVALID;
    job_status.job_id = job_post.job_id;
+
+#ifdef MEGA_DEBUG
+   printf("POST of %p %p %p %p\n", bin_begin, bin_end,
+		   render_begin, render_end);
+   printf("POST of %p %p %p %p\n", job_post.v3d_ct0ca, job_post.v3d_ct0ea,
+		   job_post.v3d_ct1ca, job_post.v3d_ct1ea);
+#endif
 
    if(msg_list_android == NULL)
    	{
@@ -978,17 +1076,66 @@ void *khrn_hw_queue(
 		job_post.job_id, gettid(), khrn_hw_addr(bin_begin),khrn_hw_addr(bin_end),
 		khrn_hw_addr(render_begin),khrn_hw_addr(render_end));
 #endif
-   if (ioctl(fd_v3d, V3D_IOCTL_POST_JOB, &job_post) < 0) {
+
+   if (fd_v3d && ioctl(fileno(fd_v3d), V3D_IOCTL_POST_JOB, &job_post) < 0) {
 	   ALOGE("ioctl [0x%x] failed \n", V3D_IOCTL_POST_JOB);
    }
 #if 0
-   if (ioctl(fd_v3d, V3D_IOCTL_WAIT_JOB, &job_status) < 0) {
+   if (ioctl(fileno(fd_v3d), V3D_IOCTL_WAIT_JOB, &job_status) < 0) {
 		  ALOGE("ioctl [0x%x] failed \n", V3D_IOCTL_WAIT_JOB);
 	  }
    ALOGE_IF((job_status.job_status != V3D_JOB_STATUS_SUCCESS), "job id[%d] status[%d] \n", job_status.job_id, job_status.job_status);
 #endif
 
    pthread_mutex_unlock(&khrn_hw_queue_mutex);
+
+  /* {
+	   FILE *fp = fopen("/home/simon/bins", "wb");
+	   assert(fp);
+
+	   fwrite((void*)_bin_start, _bin_end - _bin_start, 1, fp);
+	   fclose(fp);
+   }*/
+
+   {
+	   static int bin = 0;
+	   int prev_bin = bin - 1;
+	   if (prev_bin < 0)
+		   prev_bin = used_images - 1;
+	   update_dispmanx_image(images[prev_bin], types[prev_bin], widths[prev_bin], heights[prev_bin], pitches[prev_bin]);
+//	   update_dispmanx_image(images[bin]);
+
+	   bin++;
+	   if (bin == used_images)
+		   bin = 0;
+   }
+
+   khrn_hw_advance_render_exit_pos();
+
+   /*{
+	   int dimx = 800;
+	   int dimy = 480;
+	   int i, j;
+
+   	   FILE *fp = fopen("/home/simon/buff0", "wb");
+   	   assert(fp);
+
+   	   fprintf(fp, "P6\n%d %d\n255\n", dimx, dimy);
+
+		for (j = 0; j < dimy; ++j)
+		  {
+			for (i = 0; i < dimx; ++i)
+			{
+				unsigned char *p = images[0];
+			  static unsigned char color[3];
+			  color[0] = p[j * (800 * 4) + i * 4];
+			  color[1] = p[j * (800 * 4) + i * 4 + 1];
+			  color[2] = p[j * (800 * 4) + i * 4 + 2];
+			  (void) fwrite(color, 1, 3, fp);
+			}
+		  }
+		  (void) fclose(fp);
+   }*/
 
    return callback_data;
 }
@@ -1186,6 +1333,11 @@ void khrn_hw_wait(void)
 		   ALOGE("ioctl [0x%x] failed \n", V3D_IOCTL_WAIT_JOB);
 	   }
 //	ALOGE("wait completed for job finish");
+
+#ifdef LRU_FREE
+	increment_frame_count();
+#endif
+
 	pthread_mutex_lock(&khrn_hw_queue_mutex);
 	if(msg_list_android == NULL)
 	 {
@@ -1308,6 +1460,22 @@ typedef struct CARBON_STATISTICS_S_
 
 void v3d_carbonStatistics(void *p);
 #endif
+
+//#ifdef __ARMEL__
+//void khrn_hw_full_memory_barrier(void)
+//{
+//  register uint32_t x asm ("r0");
+//  register uint32_t *ptr asm ("r1");
+//  ptr = (uint32_t *)memory_pool_base;
+//  asm volatile ("ldr %0, [%1]" : "=r" (x) : "r" (ptr));
+//  asm volatile ("str %0, [%1]" :: "r" (x), "r" (ptr));
+//}
+//#else
+void khrn_hw_full_memory_barrier(void)
+{
+	ALOGI("khrn_hw_full_memory_barrier %s %d\n", __FILE__, __LINE__);
+}
+//#endif
 
 static void khrn_hw_isr(uint32_t flags)
 {
@@ -1618,7 +1786,13 @@ static void prepare_bin(MSG_T* bin_prepared)
            specials[0] = bin_prepared->special_0;
            specials[1] = khrn_hw_addr(bin_prepared->bin_mem);
            specials[2] = khrn_hw_addr(bin_prepared->bin_mem) + bin_mem_size;
-               specials[3] = bin_mem_size;
+#ifdef MEGA_DEBUG
+           ALOGD("bin addr %08x, size %08x\n", khrn_hw_addr(bin_prepared->bin_mem), bin_mem_size);
+#endif
+           _bin_start = (unsigned int)khrn_hw_addr(bin_prepared->bin_mem);
+           _bin_end = (unsigned int)(khrn_hw_addr(bin_prepared->bin_mem) + bin_mem_size);
+
+           specials[3] = bin_mem_size;
            bin_begin = bin_prepared->bin_begin;
            bin_end = bin_prepared->bin_end;
 		   //ALOGE("specials %x %x %x %x %x",specials[0],specials[1],specials[2],specials[3],gettid());
@@ -1901,7 +2075,7 @@ static void submit_render(bool *notify_master, bool *notify_worker)
 
 		job_status.job_id = 15;
 		job_status.job_status = V3D_JOB_STATUS_INVALID;
-		if (ioctl(fd_v3d, V3D_IOCTL_POST_JOB, &job_post) < 0) {
+		if (fd_v3d && ioctl(fileno(fd_v3d), V3D_IOCTL_POST_JOB, &job_post) < 0) {
 			ALOGE("ioctl [0x%x] failed \n", V3D_IOCTL_POST_JOB);
 		}
   		khrn_hw_isr(1);
@@ -2121,6 +2295,16 @@ static void cleanup_render_llat(bool *notify_master)
       advance_msg(&khrn_prod_msg.render_cleanup_llat);
       *notify_master = true;
    }
+}
+
+void _ei(void)
+{
+	ALOGI("enable interrupts %s %d\n", __FILE__, __LINE__);
+}
+
+void _di(void)
+{
+	ALOGI("disable interrupts %s %d\n", __FILE__, __LINE__);
 }
 
 static void display(bool *notify_master)

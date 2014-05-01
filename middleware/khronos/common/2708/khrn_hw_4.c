@@ -60,6 +60,7 @@ static void nmem_callback(void * a)
 bool khrn_hw_common_init(void)
 {
    if (!khrn_hw_init()) {
+	   assert(0);
       return false;
    }
 #ifndef BRCM_V3D_OPT

@@ -18,7 +18,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "vcfw/rtos/rtos.h"
 #include "interface/vcos/vcos.h"
 #include "vcfw/rtos/common/rtos_common_mem.h"
-#include "vcfw/logging/logging.h"
+//#include "vcfw/logging/logging.h"
 
 #ifdef __CC_ARM
 #include "vcinclude/vc_asm_ops.h"

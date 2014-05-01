@@ -7,24 +7,34 @@ LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/egl
 LOCAL_MODULE_TAGS := optional
 
+LOCAL_CFLAGS += \
+  -DBCG_FB_LAYOUT \
+  -DBRCM_V3D_OPT=1 \
+  -D_KHRONOS_CLIENT_LOGGING \
+  -DEGL_SERVER_SMALLINT \
+  -DBCM_COMP_USE_RELOC_HEAP \
+  -DUNIFORM_LOCATION_IS_16_BIT \
+  -D__VIDEOCORE4__ \
+  -D__DIRECT_RENDERING \
+  -DRPC_DIRECT \
+  -DRPC_DIRECT_MULTI \
+  -DNDEBUG__ \
+  -D__CC_ARM
+
 
 LOCAL_CFLAGS += -DLOG_TAG=\"libGLES_$(TARGET_BOARD_PLATFORM)\"
-LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
+#LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
-LOCAL_CFLAGS += -O3 -D__CC_ARM -D__VIDEOCORE4__ -D__HERA_V3D__ -DBCG_FB_LAYOUT 
-LOCAL_CFLAGS += -DBCM_COMP_USE_RELOC_HEAP -DHAVE_PRCTL -DUNIFORM_LOCATION_IS_16_BIT -D_ATHENA_
-
-LOCAL_CFLAGS += -DBRCM_V3D_OPT=1 
-
-LOCAL_CFLAGS += -D_ATHENA_
+#LOCAL_CFLAGS += -O3 -D__HERA_V3D__ 
+#LOCAL_CFLAGS += -DHAVE_PRCTL -D_ATHENA_
+#LOCAL_CFLAGS += -DDIRECT_RENDERING
+#LOCAL_CFLAGS +=  -DCHIP_REVISION=20
+#LOCAL_CFLAGS += -DBCM_COMP_ATHENA_AXI2AHB_BUG_WORKAROUND
 
 CHIP:=2708
 
-LOCAL_CFLAGS +=  -DCHIP_REVISION=20
-LOCAL_CFLAGS += -DBCM_COMP_ATHENA_AXI2AHB_BUG_WORKAROUND
 
-
-LOCAL_SHARED_LIBRARIES := libcutils libhardware libutils libui libv3d
+LOCAL_SHARED_LIBRARIES := libcutils libhardware libutils libui libv3d libstlport
 LOCAL_LDLIBS := -lpthread -ldl
 
 LOCAL_ARM_MODE := arm
@@ -35,6 +45,7 @@ GRALLOC_DIR := $(LOCAL_PATH)/../gralloc
 LOCAL_C_INCLUDES += $(VMCSX_DIR)
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/helpers/vc_image
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/interface/vcos/pthreads
+#LOCAL_C_INCLUDES += $(VMCSX_DIR)/interface
 #LOCAL_C_INCLUDES += frameworks/base/opengl/include
 #LOCAL_C_INCLUDES += hardware/libhardware/modules/gralloc
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/../v3d_library/inc
@@ -48,14 +59,10 @@ LOCAL_C_INCLUDES += $(VMCSX_DIR)/vcinclude
 LOCAL_C_INCLUDES += $(VMCSX_DIR)/vcinclude/dummy
 LOCAL_C_INCLUDES += $(GRALLOC_DIR)
 
-
-
-LOCAL_CFLAGS += -DRPC_DIRECT -DRPC_DIRECT_MULTI  -DDIRECT_RENDERING
-
-ifeq ($(TARGET_CPU),Cortex-A9)
-	LOCAL_CFLAGS += -D__ARM_NEON__
-endif
-
+# STL includes
+LOCAL_C_INCLUDES += bionic
+LOCAL_C_INCLUDES += bionic/libstdc++/include
+LOCAL_C_INCLUDES += external/stlport/stlport
 
 ################################ interface sources #############################
 
@@ -69,7 +76,8 @@ SRC32S := \
 	khrn_client_cache.c	\
 	khrn_client_global_image_map.c	\
 	khrn_client_pointermap.c	\
-	khrn_client_vector.c
+	khrn_client_vector.c            \
+        cache_cache.cpp
 
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
@@ -103,9 +111,9 @@ SRC32S := \
 	egl_khr_lock_surface_client.c	\
 	egl_khr_sync_client.c	\
 	egl_openmaxil_client.c	\
-	gl_oes_egl_image_client.c	\
 	egl_brcm_driver_monitor_client.c	\
 	gl_oes_draw_texture_client.c
+	#gl_oes_egl_image_client.c	\
 
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
@@ -153,7 +161,8 @@ SRC32S := \
 	khrn_pool_4.c	\
 	khrn_prod_4.c	\
 	khrn_render_state_4.c	\
-	khrn_worker_4.c
+	khrn_worker_4.c \
+        dispman_connection.c
 
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
@@ -215,7 +224,8 @@ LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
 SRC_PATH = middleware/khronos/egl/android
 SRC32S := \
-	platform_egl.c
+	platform_egl.c \
+        nativewindow.cpp
 
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
@@ -240,7 +250,10 @@ SRC_PATH = middleware/khronos/egl
 SRC32S := \
 	egl_disp.c	\
 	server_egl.c
+LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
+SRC_PATH = middleware/khronos/egl/dispmanx
+SRC32S := egl_platform_dispmanx.c
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
 
 
@@ -343,7 +356,6 @@ SRC32S := \
 	vg_tess.c
 
 LOCAL_SRC_FILES += $(addprefix $(SRC_PATH)/, $(SRC32S))
-
 
 ################################ applications sources #############################
 

@@ -1,5 +1,5 @@
 /*=========================================================
- Copyright © 2008 Broadcom Europe Limited. All rights reserved.
+ Copyright 2008 Broadcom Europe Limited. All rights reserved.
 
  Project  :  VEC (Video EnCoder)
  Module   :  Analogue video output middleware
@@ -13,7 +13,7 @@
 #define _VEC_MIDDLEWARE_H
 
 #include "vcinclude/common.h"
-#include "middleware/dispmanx/dispmanx_types.h"
+//#include "middleware/dispmanx/dispmanx_types.h"
 
 /*************************************************************
  Types

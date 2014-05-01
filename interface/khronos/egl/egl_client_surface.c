@@ -272,6 +272,9 @@ bool egl_surface_check_attribs(
       All invaraints on EGL_SURFACE_T
 */
 
+//sjh hack
+void init_dispmanx(int type, int width, int height);
+
 EGL_SURFACE_T *egl_surface_create(
    EGLSurface name,
    EGL_SURFACE_TYPE_T type,
@@ -296,6 +299,8 @@ EGL_SURFACE_T *egl_surface_create(
    KHRN_IMAGE_FORMAT_T multi;
    uint32_t configid;
    uint32_t sem_name;
+
+   static int first = 1;
 
    EGL_SURFACE_T *surface = egl_surface_pool_alloc();
 
@@ -353,6 +358,15 @@ EGL_SURFACE_T *egl_surface_create(
 
    configid = egl_config_to_id(config);
    color = egl_config_get_color_format(configid);
+
+   //sjh
+   if (first)
+   {
+//	   init_dispmanx(color, width, height);
+	   first = 0;
+   }
+
+
    if (alphaformat == PRE) { color = (KHRN_IMAGE_FORMAT_T)(color | IMAGE_FORMAT_PRE); }
    if (colorspace == LINEAR) { color = (KHRN_IMAGE_FORMAT_T)(color | IMAGE_FORMAT_LIN); }
    depth = egl_config_get_depth_format(configid);

@@ -404,7 +404,7 @@ typedef void* GLeglImageOES;
 
 /* GL_OES_EGL_image */
 #ifndef GL_OES_EGL_image
-#define GL_OES_EGL_image 1
+//#define GL_OES_EGL_image 1
 #ifdef GL_GLEXT_PROTOTYPES
 GL_APICALL void GL_APIENTRY glEGLImageTargetTexture2DOES (GLenum target, GLeglImageOES image);
 GL_APICALL void GL_APIENTRY glEGLImageTargetRenderbufferStorageOES (GLenum target, GLeglImageOES image);

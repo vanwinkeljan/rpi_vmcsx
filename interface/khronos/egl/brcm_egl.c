@@ -1,3 +1,4 @@
+#if 0
 /* ============================================================================
 Copyright (c) 2008-2014, Broadcom Corporation
 All rights reserved.
@@ -1061,4 +1062,4 @@ void* eglGetComposerANDROID(EGLDisplay dpy, EGLSurface draw)
 	else
 		return NULL;
 }
-
+#endif

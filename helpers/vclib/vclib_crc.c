@@ -710,7 +710,7 @@ RETURNS
    computed crc-16
 *******************************************************************************/
 
-static _Inline unsigned int vclib_crc16_byte(VCLIB_CRC16_STATE_T const *state, unsigned int crc, uint8_t byte)
+static inline unsigned int vclib_crc16_byte(VCLIB_CRC16_STATE_T const *state, unsigned int crc, uint8_t byte)
 {
    uint32_t a, b, c;
    uint32_t toggle;

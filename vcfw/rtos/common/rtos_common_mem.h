@@ -313,7 +313,7 @@ extern MEM_HANDLE_T mem_alloc_ex(
 #ifdef BRCM_V3D_OPT
 extern MEM_HANDLE_T mem_wrap(void *p, uint32_t phys, uint32_t size, uint32_t align, MEM_FLAG_T flags, const char *desc);
 #else
-extern MEM_HANDLE_T mem_wrap(void *p, uint32_t size, uint32_t align, MEM_FLAG_T flags, const char *desc);
+MEM_HANDLE_T mem_wrap(void *p, uint32_t size, uint32_t align, MEM_FLAG_T flags, const char *desc);
 #endif
 #endif
 
@@ -512,11 +512,7 @@ extern const char *mem_get_desc(
    - The MEM_HANDLE_T's description is set to desc.
 */
 
-#ifdef NDEBUG
-static RCM_INLINE void mem_set_desc(MEM_HANDLE_T handle, const char *desc)
-{
-}
-#else
+#ifndef NDEBUG
 extern void mem_set_desc(
    MEM_HANDLE_T handle,
    const char *desc);

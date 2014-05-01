@@ -276,8 +276,8 @@ except EGL LEVEL. If attrib list is NULL or empty (first attribute is EGL NONE),
 then selection and sorting of EGLConfigs is done according to the default criteria
 in Tables 3.4 and 3.1, as described below under Selection and Sorting.
 Selection of EGLConfigs
-Attributes are matched in an attribute-specific manner, as shown in the ”Selection
-Critera” column of table 3.4. The criteria listed in the table have the following
+Attributes are matched in an attribute-specific manner, as shown in the Selection
+Critera column of table 3.4. The criteria listed in the table have the following
 meanings:
 AtLeast Only EGLConfigs with an attribute value that meets or exceeds the
 specified value are selected.
@@ -386,7 +386,7 @@ could return a list whose first config has a depth of 8888.
    -
 */
 
-EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig(EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config)
+EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig_inner(EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config, bool sane)
 {
    CLIENT_THREAD_STATE_T *thread;
    CLIENT_PROCESS_STATE_T *process;
@@ -423,7 +423,10 @@ EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig(EGLDisplay dpy, const EGLint *attr
             for (i = 0; i < EGL_MAX_CONFIGS; i++)
                ids[i] = i;
 
-            egl_config_sort(ids, use_red, use_green, use_blue, use_alpha);
+//            egl_config_sort(ids, use_red, use_green, use_blue, use_alpha);
+            egl_config_sort(ids,
+               !sane && use_red, !sane && use_green,
+               !sane && use_blue, !sane && use_alpha);
 
             /*
                return configs
@@ -455,6 +458,19 @@ EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig(EGLDisplay dpy, const EGLint *attr
       result = EGL_FALSE;
 
    return result;
+}
+
+//sjh this is not good
+EGLAPI EGLBoolean EGLAPIENTRY eglSaneChooseConfigBRCM(EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config)
+{
+	return eglChooseConfig_inner(dpy, attrib_list, configs, config_size, num_config, true);
+}
+
+
+//insane
+EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig(EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config)
+{
+	return eglChooseConfig_inner(dpy, attrib_list, configs, config_size, num_config, false);
 }
 
 /*

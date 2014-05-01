@@ -499,6 +499,16 @@ static int32_t v3d_info(const char **driver_name,
    return 0;
 }
 
+//sjh
+int _msb(int val)
+{
+   unsigned int msb=31;
+   if (val==0) return -1;
+   while ((val&(1<<msb))==0)
+      msb--;
+   return (int)msb;
+}
+
 /* open the driver and obtain a handle
  * return 0 on success; all other values are failures */
 static int32_t v3d_open(const V3D_PARAMS_T *params,
@@ -516,14 +526,16 @@ static int32_t v3d_open(const V3D_PARAMS_T *params,
    if (v3d_state.free_users_mask == ALL_USERS_MASK) {
 #ifndef ANDROID
 #ifndef __HERA_V3D__
-      if (sysman_register_user(&v3d_state.sysman_handle) != 0) {
+	   ALOGD("sysman_register_user %s %d\n", __FILE__, __LINE__);
+      /*if (sysman_register_user(&v3d_state.sysman_handle) != 0) {
          vcos_mutex_unlock(&v3d_state.mutex);
          return -1;
-      }
+      }*/
 
       /* calling multiple times with the same arguments is fine -- every call
        * after the first will be ignored */
-      vcsuspend_register(VCSUSPEND_RUNLEVEL_V3D, v3d_do_suspend_resume, NULL);
+      ALOGV("vcsuspend_register %s %d\n", __FILE__, __LINE__);
+//      vcsuspend_register(VCSUSPEND_RUNLEVEL_V3D, v3d_do_suspend_resume, NULL);
 #else
 #ifdef _ATHENA_
       V3D_Enable_Power();
@@ -561,8 +573,9 @@ static int32_t v3d_close(DRIVER_HANDLE_T handle)
 #ifndef __HERA_V3D__
       /* todo: vcsuspend_unregister? */
 
-      int32_t success = sysman_deregister_user(v3d_state.sysman_handle);
-      vcos_assert(success == 0);
+	   ALOGI("sysman_deregister_user %s %d\n", __FILE__, __LINE__);
+//      int32_t success = sysman_deregister_user(v3d_state.sysman_handle);
+//      vcos_assert(success == 0);
 #else
 #ifdef _ATHENA_
    V3D_Disable_Power();
@@ -908,10 +921,27 @@ static void release(PART_T part, USER_T *user, uint32_t max_min_user_vpm)
    vcos_mutex_unlock(&v3d_state.mutex);
 }
 
+void vclib_dcache_invalidate_range(void *start_addr, int length)
+{
+    ALOGE("vclib_dcache_invalidate_range %s %d\n", __FILE__, __LINE__);
+}
+
+void _vcos_tls_thread_ptr_set(void *p)
+{
+    ALOGE("_vcos_tls_thread_ptr_set %s %d\n", __FILE__, __LINE__);
+}
+
+void *_vcos_tls_thread_ptr_get(void)
+{
+    ALOGE("_vcos_tls_thread_ptr_get %s %d\n", __FILE__, __LINE__);
+    return NULL;
+}
+
 #ifdef V3D_HACKY_RESET
 #include "helpers/clockman/clockman.h"
 static void hacky_reset(void)
 {
+#if 0
    /* hack: do a reset manually (i just copied this from 2708/power.c. not sure
     * how much is actually necessary) */
 
@@ -976,8 +1006,15 @@ static void hacky_reset(void)
    clockman_setup_clock( CLOCK_OUTPUT_V3D, 250*1000*1000, 0, 0 );
 #endif
 #endif // ANDROID
+#endif
 }
 #endif
+
+const INTCTRL_DRIVER_T *intctrl_get_func_table( void )
+{
+   ALOGE("intctrl_get_func_table %s %d\n", __FILE__, __LINE__);
+   return NULL;
+}
 
 static void turn_on(void)
 {
@@ -995,7 +1032,8 @@ static void turn_on(void)
 #ifndef __HERA_V3D__
    /* if this assert fires, someone else is keeping v3d on. all users of v3d
     * should use this driver and not be talking to sysman directly... */
-   vcos_assert(!sysman_is_enabled(SYSMAN_BLOCK_V3D));
+   ALOGI("sysman_is_enabled assert check %s %d\n", __FILE__, __LINE__);
+//   vcos_assert(!sysman_is_enabled(SYSMAN_BLOCK_V3D));
 #endif
 
    /* the v3d block should be being held in reset at this point. if it isn't,
@@ -1017,7 +1055,8 @@ static void turn_on(void)
    vcos_set_interrupt_mask(INTERRUPT_3D, 1);
 #endif
 #else
-   sysman_set_user_request(v3d_state.sysman_handle, SYSMAN_BLOCK_V3D, 1, SYSMAN_WAIT_BLOCKING);
+   ALOGI("sysman_set_user_request %s %d\n", __FILE__, __LINE__);
+//   sysman_set_user_request(v3d_state.sysman_handle, SYSMAN_BLOCK_V3D, 1, SYSMAN_WAIT_BLOCKING);
    intctrl_get_func_table()->set_imask_per_core(0, 0, INTERRUPT_3D, 1); /* enable 3d interrupts on vpu0 */
 #endif
 
@@ -1055,7 +1094,8 @@ static void turn_off(void)
 #endif
 #else
    intctrl_get_func_table()->set_imask_per_core(0, 0, INTERRUPT_3D, 0); /* disable 3d interrupts on vpu0 */
-   sysman_set_user_request(v3d_state.sysman_handle, SYSMAN_BLOCK_V3D, 0, SYSMAN_WAIT_BLOCKING);
+   ALOGI("sysman_set_user_request %s %d\n", __FILE__, __LINE__);
+//   sysman_set_user_request(v3d_state.sysman_handle, SYSMAN_BLOCK_V3D, 0, SYSMAN_WAIT_BLOCKING);
 #endif
 #ifdef ANDROID
    turn_off_linux();

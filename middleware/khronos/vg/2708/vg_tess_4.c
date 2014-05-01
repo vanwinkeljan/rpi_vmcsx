@@ -212,7 +212,7 @@ static void *rect_do(void *rect, uint32_t min_xy, uint32_t max_xy)
          todo: on b0, use rht? certainly use special inline vg thing
       */
 
-      ADD_BYTE(p, KHRN_HW_INSTR_COMPRESSED_LIST);
+	   Add_byte(p, KHRN_HW_INSTR_COMPRESSED_LIST);
       ADD_BYTE(p, 0x81);
       ADD_WORD(p, min_xy);
       ADD_WORD(p, max_xy);
@@ -314,7 +314,7 @@ bool vg_tess_quad_rep(KHRN_FMEM_T *fmem,
 
       p = khrn_fmem_cle(fmem, 1 + ((quad_rep->n - 2) * 13) + 1);
       if (!p) { return false; }
-      ADD_BYTE(p, KHRN_HW_INSTR_COMPRESSED_LIST);
+      Add_byte(p, KHRN_HW_INSTR_COMPRESSED_LIST);
       for (i = 0; i != (quad_rep->n - 2); ++i) {
          ADD_BYTE(p, 0x81);
          ADD_WORD(p, quad_rep->p[0]);
@@ -2063,7 +2063,7 @@ static bool rep(TESS_T *tess,
 #ifdef VG_TESS_QPU
    UNUSED(fill);
    /* add the branch to the indirection placeholder */
-   ADD_BYTE(p, KHRN_HW_INSTR_BRANCH_SUB);
+   Add_byte(p, KHRN_HW_INSTR_BRANCH_SUB);
    ADD_WORD(p, khrn_hw_addr(khrn_hw_alias_direct(r->in_use.ind_branch_dest)));
 #else
    post_rep(tess, r, fill, p);
@@ -2148,7 +2148,7 @@ bool vg_tess_fill_bbox(VG_TESS_HANDLE_T tess_handle,
       return false;
    }
 #ifdef VG_TESS_QPU
-   ADD_BYTE(rect, KHRN_HW_INSTR_BRANCH_SUB);
+   Add_byte(rect, KHRN_HW_INSTR_BRANCH_SUB);
    ADD_WORD(rect, khrn_hw_addr(khrn_hw_alias_direct(((REP_T *)(fill_rep))->in_use.ind_branch_dest+5)));
 #else
    post_fill_bbox(tess, (REP_T *)fill_rep, rect);

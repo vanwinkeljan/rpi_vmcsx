@@ -75,6 +75,10 @@ typedef struct {
 	uint32_t v3d_ct1ca;
 	uint32_t v3d_ct1ea;
 	uint32_t v3d_vpm_size;
+
+	//sjh
+	void *m_pOverspill;
+	unsigned int m_overspillSize;
 } v3d_job_post_t;
 
 typedef struct {

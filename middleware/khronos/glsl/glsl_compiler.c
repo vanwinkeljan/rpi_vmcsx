@@ -868,6 +868,7 @@ bool glsl_compile_and_link(slang_program* program)
       program->num_samplers = 0;
 
 #ifndef NDEBUG
+      int i;
       for (i = 0; i < SLANG_MAX_NUM_FSAMPLERS; i++)
          program->samplers[i].uniform = -1;
 #endif

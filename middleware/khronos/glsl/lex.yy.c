@@ -48,8 +48,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #ifdef __CC_ARM
 #ifndef ANDROID
-#include "mobcom_types.h"
-#include "file.h"
+//#include "mobcom_types.h"
+//#include "file.h"
 #define	getc		FS_Getc
 #define EINTR		4
 #endif

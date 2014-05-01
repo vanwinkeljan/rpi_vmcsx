@@ -713,7 +713,7 @@ static bool set_dummy_shader(VG_BE_RENDER_STATE_T *render_state)
 
    p = khrn_fmem_cle(render_state->fmem, 5);
    if (!p) { return false; }
-   ADD_BYTE(p, KHRN_HW_INSTR_VG_SHADER);
+   Add_byte(p, KHRN_HW_INSTR_VG_SHADER);
 #ifdef SIMPENROSE_RECORD_OUTPUT
    record_map_buffer(khrn_hw_addr(dummy_shader_record), 12, L_VG_SHADER_RECORD, RECORD_BUFFER_IS_BOTH, 16);
 #endif
@@ -801,7 +801,7 @@ static bool set_shader(VG_BE_RENDER_STATE_T *render_state,
 
    p = khrn_fmem_cle(render_state->fmem, 5);
    if (!p) { goto error_0; }
-   ADD_BYTE(p, KHRN_HW_INSTR_VG_SHADER);
+   Add_byte(p, KHRN_HW_INSTR_VG_SHADER);
    vcos_assert(!((size_t)shader_record & 0xf));
 #ifdef SIMPENROSE_RECORD_OUTPUT
    record_map_mem_buffer_section(shader_record_handle_offset.mh_handle, shader_record_handle_offset.offset, 12, L_VG_SHADER_RECORD, RECORD_BUFFER_IS_BOTH, 16);
@@ -820,7 +820,7 @@ error_0:
 
    p = khrn_fmem_cle(render_state->fmem, 9);
    if (!p) { return false; }
-   ADD_BYTE(p, KHRN_HW_INSTR_INLINE_VG_SHADER);
+   Add_byte(p, KHRN_HW_INSTR_INLINE_VG_SHADER);
    if (shader_handle != MEM_INVALID_HANDLE) {
       vcos_assert(!shader);
       vcos_assert(mem_get_align(shader_handle) >= 8);
@@ -1180,7 +1180,7 @@ static bool set_offset(VG_BE_RENDER_STATE_T *render_state,
    if (render_state->offset != offset) {
       uint8_t *p = khrn_fmem_cle(render_state->fmem, 5);
       if (!p) { return false; }
-      ADD_BYTE(p, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);
+      Add_byte(p, KHRN_HW_INSTR_STATE_VIEWPORT_OFFSET);
       ADD_WORD(p, offset);
       vcos_assert(khrn_fmem_is_here(render_state->fmem, p));
 
@@ -1199,7 +1199,7 @@ static bool set_clip(VG_BE_RENDER_STATE_T *render_state,
    if ((render_state->clip_xy != clip_xy) || (render_state->clip_wh != clip_wh)) {
       uint8_t *p = khrn_fmem_cle(render_state->fmem, 9);
       if (!p) { return false; }
-      ADD_BYTE(p, KHRN_HW_INSTR_STATE_CLIP);
+      Add_byte(p, KHRN_HW_INSTR_STATE_CLIP);
       ADD_WORD(p, clip_xy);
       ADD_WORD(p, clip_wh);
       vcos_assert(khrn_fmem_is_here(render_state->fmem, p));
@@ -1262,7 +1262,7 @@ static bool set_cfg(VG_BE_RENDER_STATE_T *render_state,
    if (render_state->cfg != cfg) {
       uint8_t *p = khrn_fmem_cle(render_state->fmem, 4);
       if (!p) { return false; }
-      ADD_BYTE(p, KHRN_HW_INSTR_STATE_CFG);
+      Add_byte(p, KHRN_HW_INSTR_STATE_CFG);
       ADD_SHORT(p, (uint16_t)(cfg & 0xffff));
       ADD_BYTE(p, (uint8_t)(cfg >> 16));
       vcos_assert(khrn_fmem_is_here(render_state->fmem, p));
@@ -1327,7 +1327,7 @@ static bool start_cmems(VG_BE_RENDER_STATE_T *render_state)
 
    p = khrn_fmem_cle(fmem, 19);
    if (!p) { goto error_4; }
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_BINNING_MODE);
+   Add_byte(p, KHRN_HW_INSTR_STATE_TILE_BINNING_MODE);
    width_in_tiles = get_width_in_tiles(render_state->frame_width);
    height_in_tiles = get_height_in_tiles(render_state->frame_height);
    state_size = height_in_tiles * width_in_tiles * KHRN_HW_TILE_STATE_SIZE;
@@ -1349,9 +1349,9 @@ static bool start_cmems(VG_BE_RENDER_STATE_T *render_state)
       (1 << 2) | /* auto-init state */
       (0 << 3) | /* 32-byte initial block size */
       (3 << 5)); /* 256-byte regular block size */
-   ADD_BYTE(p, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT);
+   Add_byte(p, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT);
    ADD_BYTE(p, 0x32); /* xy triangles */
-   ADD_BYTE(p, KHRN_HW_INSTR_START_TILE_BINNING);
+   Add_byte(p, KHRN_HW_INSTR_START_TILE_BINNING);
    vcos_assert(khrn_fmem_is_here(fmem, p));
 
    /*
@@ -1890,8 +1890,8 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
    if (!p) { goto error_0; }
    /* order of these is somewhat counter-intuitive
     * incr semaphore actually just sets a flag saying "increment semaphore when next flush completes" */
-   ADD_BYTE(p, KHRN_HW_INSTR_INCR_SEMAPHORE);
-   ADD_BYTE(p, KHRN_HW_INSTR_FLUSH);
+   Add_byte(p, KHRN_HW_INSTR_INCR_SEMAPHORE);
+   Add_byte(p, KHRN_HW_INSTR_FLUSH);
    vcos_assert(khrn_fmem_is_here(render_state->fmem, p));
 
    /*
@@ -1927,7 +1927,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
    } else {
       clear_rgba = 0; /* don't care what the clear color is */
    }
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_CLEARCOL);
+   Add_byte(p, KHRN_HW_INSTR_STATE_CLEARCOL);
    ADD_WORD(p, clear_rgba);
    ADD_WORD(p, clear_rgba);
    ADD_WORD(p, render_state->mask_clear_value << 24); /* z and mask clear values */
@@ -1937,7 +1937,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
    /* always need to do a dummy store to clear the z/stencil to 0. we don't want
     * to overwrite the framebuffer, and there's no nop store on a0, so store to
     * dummy_tile instead */
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);
+   Add_byte(p, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);
 #ifdef SIMPENROSE_RECORD_OUTPUT
    record_map_buffer(khrn_hw_addr(dummy_tile), KHRN_HW_TILE_HEIGHT * KHRN_HW_TILE_WIDTH * 4, L_FRAMEBUFFER, RECORD_BUFFER_IS_BOTH, KHRN_HW_TLB_ALIGN);
 #endif
@@ -1950,14 +1950,14 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
       (1 << 2) | /* 32-bit rso */
       (0 << 4))); /* 1x decimate (ie none) */
    ADD_BYTE(p, 0); /* unused */
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
+   Add_byte(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
    ADD_BYTE(p, 0);
    ADD_BYTE(p, 0);
-   ADD_BYTE(p, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);
+   Add_byte(p, KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF);
 #endif
 
    /* rendering mode setup */
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);
+   Add_byte(p, KHRN_HW_INSTR_STATE_TILE_RENDERING_MODE);
    if (render_state->buffers_acquired & BA_FRAME_RW) {
       if (!khrn_fmem_add_fix_image(render_state->fmem,
          &p, khrn_render_state_get_index_from_data(render_state),
@@ -1987,10 +1987,10 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
 #ifndef __BCM2708A0__
    /* always need to do a dummy store to clear the z/stencil to 0. we can use a
     * nop store on b0 */
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
+   Add_byte(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
    ADD_BYTE(p, 0);
    ADD_BYTE(p, 0);
-   ADD_BYTE(p, KHRN_HW_INSTR_STORE_GENERAL);
+   Add_byte(p, KHRN_HW_INSTR_STORE_GENERAL);
    ADD_BYTE(p, 0); /* don't store anything */
    ADD_BYTE(p, (uint8_t)(
       (!render_state->frame_clear << 5) | /* clear color */
@@ -2002,26 +2002,26 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
    /* we only use xy triangles. by putting the primitive list format here and at
     * the start of the bin list (prior to START_TILE_BINNING), we won't get any
     * primitive list formats binned */
-   ADD_BYTE(p, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT);
+   Add_byte(p, KHRN_HW_INSTR_PRIMITIVE_LIST_FORMAT);
    ADD_BYTE(p, 0x32); /* xy triangles */
 
    /* need to set depth offset and clipz even though defaults are fine as gl may
     * have changed them... */
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_DEPTH_OFFSET);
+   Add_byte(p, KHRN_HW_INSTR_STATE_DEPTH_OFFSET);
    ADD_SHORT(p, 0); /* factor */
    ADD_SHORT(p, 0); /* units */
-   ADD_BYTE(p, KHRN_HW_INSTR_STATE_CLIPZ); /* z is 0.5 for xy stuff */
+   Add_byte(p, KHRN_HW_INSTR_STATE_CLIPZ); /* z is 0.5 for xy stuff */
    ADD_FLOAT(p, 0.0f); /* min z */
    ADD_FLOAT(p, 1.0f); /* max z */
 
    /* wait for binning to complete before going any further. todo: we could
     * load/clear the first tile before waiting... */
 #if defined(SIMPENROSE_RECORD_OUTPUT) && !defined(SIMPENROSE_RECORD_BINNING)
-   ADD_BYTE(p, KHRN_HW_INSTR_NOP); /* recorded output won't have binning stage, so don't wait for it! */
-   ADD_BYTE(p, KHRN_HW_INSTR_NOP);
+   Add_byte(p, KHRN_HW_INSTR_NOP); /* recorded output won't have binning stage, so don't wait for it! */
+   Add_byte(p, KHRN_HW_INSTR_NOP);
 #else
-   ADD_BYTE(p, KHRN_HW_INSTR_WAIT_SEMAPHORE);
-   ADD_BYTE(p, KHRN_HW_INSTR_MARKER); /* khrn_hw assumes there is a MARKER just after the WAIT_SEMAPHORE */
+   Add_byte(p, KHRN_HW_INSTR_WAIT_SEMAPHORE);
+   Add_byte(p, KHRN_HW_INSTR_MARKER); /* khrn_hw assumes there is a MARKER just after the WAIT_SEMAPHORE */
 #endif
 
    vcos_assert(khrn_fmem_is_here(render_state->fmem, p));
@@ -2062,7 +2062,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
 
 #ifndef __BCM2708A0__
          if (load_frame) {
-            ADD_BYTE(p, KHRN_HW_INSTR_LOAD_GENERAL);
+        	 Add_byte(p, KHRN_HW_INSTR_LOAD_GENERAL);
             ADD_BYTE(p, (uint8_t)(
                (1 << 0) | /* load color */
                (frame_mem_format << 4)));
@@ -2076,14 +2076,14 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
                render_state->frame_src, 0)) { goto error_1; }
 
             if (load_mask) {
-               ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
+            	Add_byte(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
                ADD_BYTE(p, (uint8_t)i);
                ADD_BYTE(p, (uint8_t)j);
                /* this store is a nop; it's necessary as every tile coords must
                 * have a corresponding store (and we need the extra tile coords
                 * for the extra load). todo: how many cycles does it take the
                 * hardware? */
-               ADD_BYTE(p, KHRN_HW_INSTR_STORE_GENERAL);
+               Add_byte(p, KHRN_HW_INSTR_STORE_GENERAL);
                ADD_BYTE(p, 0); /* don't store anything */
                ADD_BYTE(p, (uint8_t)(
                   (1 << 5) | /* don't clear color */
@@ -2094,7 +2094,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
          }
 
          if (load_mask) {
-            ADD_BYTE(p, KHRN_HW_INSTR_LOAD_GENERAL);
+        	 Add_byte(p, KHRN_HW_INSTR_LOAD_GENERAL);
             ADD_BYTE(p, (uint8_t)(
                (4 << 0) | /* load mask */
                (0 << 4))); /* raster order */
@@ -2105,11 +2105,11 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
          }
 #endif
 
-         ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
+         Add_byte(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
          ADD_BYTE(p, (uint8_t)i);
          ADD_BYTE(p, (uint8_t)j);
 
-         ADD_BYTE(p, KHRN_HW_INSTR_BRANCH_SUB);
+         Add_byte(p, KHRN_HW_INSTR_BRANCH_SUB);
          if (!khrn_fmem_add_special(render_state->fmem,
             &p,
             KHRN_FMEM_SPECIAL_BIN_MEM,
@@ -2117,7 +2117,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
 
 #ifndef __BCM2708A0__
          if (store_mask) {
-            ADD_BYTE(p, KHRN_HW_INSTR_STORE_GENERAL);
+        	 Add_byte(p, KHRN_HW_INSTR_STORE_GENERAL);
             ADD_BYTE(p, (uint8_t)(
                (4 << 0) | /* store mask */
                (0 << 4) | /* raster order */
@@ -2138,7 +2138,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
 
             if (store_frame) {
                /* need another tile coords to do another store... */
-               ADD_BYTE(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
+            	Add_byte(p, KHRN_HW_INSTR_STATE_TILE_COORDS);
                ADD_BYTE(p, (uint8_t)i);
                ADD_BYTE(p, (uint8_t)j);
             }
@@ -2147,7 +2147,7 @@ void vg_be_render_state_flush(VG_BE_RENDER_STATE_T *render_state)
          if (store_frame) {
 #endif
             /* this will clear all the buffers... */
-            ADD_BYTE(p, eof ? KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF : KHRN_HW_INSTR_STORE_SUBSAMPLE);
+        	 Add_byte(p, eof ? KHRN_HW_INSTR_STORE_SUBSAMPLE_EOF : KHRN_HW_INSTR_STORE_SUBSAMPLE);
 #ifndef __BCM2708A0__
          }
 #endif

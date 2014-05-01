@@ -1,3 +1,4 @@
+#if 0
 /* ============================================================================
 Copyright (c) 2008-2014, Broadcom Corporation
 All rights reserved.
@@ -15,7 +16,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-#include <utils/threads.h>
+//#include <utils/threads.h>
 
 #define MEM_FLAG_INCOHERENT
 
@@ -160,6 +161,13 @@ static RCM_INLINE int32_t _msb(uint32_t x) /* unsigned to get lsr */
    return msb;
 }
 #endif
+
+#define MEM_HANDLE_BIT_SMALL_ALLOC (void *)1
+#define MEM_HANDLE_BIT_SMALL_ALLOC (void *)2
+
+typedef struct{
+	unsigned int a[8];
+} MEM_HEADER_T;
 
 /* a bunch of stuff below relies on MEM_HEADER_T being exactly 32 bytes */
 vcos_static_assert(sizeof(MEM_HEADER_T) == 32);
@@ -5319,3 +5327,4 @@ void mem_set_accessctrl(MEM_ACCESSCTRL_BLOCK *blocks, uint32_t n)
 } /* mem_set_accesstrl */
 
 #endif //#ifdef MEM_ACCESS_CTRL
+#endif

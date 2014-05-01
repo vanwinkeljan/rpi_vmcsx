@@ -71,12 +71,12 @@ static int application_error_handler(Display *display, XErrorEvent *theEvent)
 #endif
 
 
-VCOS_STATUS_T khronos_platform_semaphore_create(PLATFORM_SEMAPHORE_T *sem, int name[3], int count)
+/*VCOS_STATUS_T khronos_platform_semaphore_create(PLATFORM_SEMAPHORE_T *sem, int name[3], int count)
 {
    char buf[64];
    vcos_snprintf(buf,sizeof(buf),"KhanSemaphore%08x%08x%08x", name[0], name[1], name[2]);
    return vcos_named_semaphore_create(sem, buf, count);
-}
+}*/
 
 uint64_t khronos_platform_get_process_id()
 {

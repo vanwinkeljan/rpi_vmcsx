@@ -20,10 +20,10 @@ VCOS_STATUS_T khronos_platform_semaphore_create(PLATFORM_SEMAPHORE_T *sem, int n
 }
 #ifndef BRCM_V3D_OPT
 
-uint64_t khronos_platform_get_process_id()
+/*uint64_t khronos_platform_get_process_id()
 {
    return vcos_process_id_current();
-}
+}*/
 
 #ifndef KHRN_PLATFORM_VCOS_NO_MALLOC
 
@@ -33,6 +33,8 @@ uint64_t khronos_platform_get_process_id()
    @param size Size in bytes of memory block to allocate
    @return pointer to memory block
 **/
+//sjh
+#if 0
 void *khrn_platform_malloc(size_t size, const char * name)
 {
    void* h = vcos_malloc(size, name);
@@ -52,5 +54,6 @@ void khrn_platform_free(void *v)
       vcos_free(v);
    }
 }
+#endif
 #endif
 #endif

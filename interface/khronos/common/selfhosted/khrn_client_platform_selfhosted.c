@@ -9,6 +9,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 ============================================================================ */
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "interface/khronos/common/khrn_int_common.h"
 #include "interface/khronos/common/khrn_client_platform.h"
@@ -20,6 +21,27 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "middleware/khronos/common/khrn_hw.h"
 #include "middleware/khronos/dispatch/khrn_dispatch_rpc.h" /* khdispatch_send_async prototype */
 #include "interface/khronos/common/khrn_int_ids.h"
+
+#ifdef KHRONOS_CLIENT_LOGGING
+FILE *xxx_vclog = NULL;
+
+void khronos_client_log(const char *fmt, ...)
+{
+   va_list ap;
+   va_start(ap,fmt);
+#if 1
+   vprintf(fmt, ap);
+   fflush(stdout);
+#endif
+   if(xxx_vclog!=NULL)
+   {
+      vfprintf(xxx_vclog, fmt, ap);
+      fflush(xxx_vclog);
+   }
+   va_end(ap);
+}
+
+#endif
 
 #ifdef BRCM_V3D_OPT
 #include <pthread.h>
@@ -215,6 +237,17 @@ void platform_get_dimensions(EGLNativeWindowType win, uint32_t *width, uint32_t 
 #endif //EGL_SERVER_SMALLINT
 
 #ifndef __HERA_V3D__
+//sjh lock/unlock
+void vc_image_lock( VC_IMAGE_BUF_T *dst, const VC_IMAGE_T * src )
+{
+   printf("vc_image_lock %s %d\n", __FILE__, __LINE__);
+}
+
+void vc_image_unlock( VC_IMAGE_BUF_T *img )
+{
+   printf("vc_image_unlock %s %d\n", __FILE__, __LINE__);
+}
+
 bool platform_get_pixmap_info(EGLNativePixmapType pixmap, KHRN_IMAGE_WRAP_T *image)
 {
    VC_IMAGE_T *vcimage = (VC_IMAGE_T *)pixmap, locked;
@@ -300,6 +333,7 @@ bool platform_get_pixmap_info(EGLNativePixmapType pixmap, KHRN_IMAGE_WRAP_T *ima
    return true;
 }
 
+#endif
 void *khrn_platform_malloc(size_t size, const char *desc)
 {
    void* h = malloc(size);
@@ -313,7 +347,6 @@ void khrn_platform_free(void *v)
    if (v) free(v);
 }
 
-#endif
 
 #if defined(RPC_LIBRARY) || defined(RPC_DIRECT_MULTI)
 void platform_get_pixmap_server_handle(EGLNativePixmapType pixmap, uint32_t *handle)
@@ -594,7 +627,7 @@ const KHRONOS_FUNC_TABLE_T *khronos_server_lock_func_table(int connection)
 
    khronos_func_table = (KHRONOS_FUNC_TABLE_T*)khronos_get_func_table();
 #ifdef BRCM_V3D_OPT
-	current_thread_id = gettid();
+	current_thread_id = pthread_self();//gettid();
 #else
 	current_thread_id = (VCOS_THREAD_T *)vcos_thread_current();
 #endif

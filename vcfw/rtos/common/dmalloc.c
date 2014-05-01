@@ -22,7 +22,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "vcfw/rtos/rtos.h"
 #include "vcfw/rtos/common/rtos_common_malloc.h"
 #include "vcfw/rtos/common/dmalloc.h"
-#include "vcfw/logging/logging.h"
+//#include "vcfw/logging/logging.h"
 
 #ifndef DMALLOC_LOCK
 #error DMALLOC_LOCK not defined - dmalloc.c should be #included by a platform-specific file

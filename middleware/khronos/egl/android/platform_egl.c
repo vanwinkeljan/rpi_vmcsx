@@ -15,6 +15,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <assert.h>
 #include <system/window.h>
 #include <cutils/log.h>
+#include <hardware/gralloc.h>
 
 static bool displaying = false;
 static uint32_t current_win = 0;
@@ -182,9 +183,10 @@ void egl_server_platform_display(
 		nativeWindow = get_android_native_window();
 
 	if (nativeWindow) {
-		nativeWindow->dequeueBuffer(nativeWindow, &buffer);
-		// comment out the line below when software OpenGL is used for SurfaceFlinger 
-		nativeWindow->lockBuffer(nativeWindow, buffer);
+                int fenceFd;
+		nativeWindow->dequeueBuffer(nativeWindow, &buffer,&fenceFd);
+                if(fenceFd >= 0)
+                  close(fenceFd);
 
 		module->lock(module, buffer->handle,
 			GRALLOC_USAGE_SW_WRITE_OFTEN,
@@ -202,7 +204,10 @@ void egl_server_platform_display(
 		}
 
 		module->unlock(module, buffer->handle);
-		nativeWindow->queueBuffer(nativeWindow, buffer);
+
+		nativeWindow->queueBuffer(nativeWindow, buffer,&fenceFd);
+		if(fenceFd >= 0)
+			close(fenceFd);
 	}
 	}
 

@@ -13,7 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #ifdef EGL_SERVER_SMALLINT
 
-static INLINE EGLNativeWindowType platform_get_canonical_win(int width, int height)
+static inline EGLNativeWindowType platform_get_canonical_win(int width, int height)
 {
 	if ((width == 800) && (height == 480))	return NATIVE_WINDOW_800_480;
 	else if ((width == 640) && (height == 480)) return NATIVE_WINDOW_640_480;
@@ -32,7 +32,7 @@ static INLINE EGLNativeWindowType platform_get_canonical_win(int width, int heig
 	else return (NativeWindowType)0;
 }
 
-static NativeWindowType convertNativeWindowType(NativeWindowType window)
+NativeWindowType convertNativeWindowType(NativeWindowType window)
 {
 	int width, height;
 	android_native_window_t *nativeWindow = (android_native_window_t*)(window);

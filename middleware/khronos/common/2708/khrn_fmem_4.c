@@ -247,6 +247,11 @@ void *khrn_fmem_queue(
    KHRN_HW_CALLBACK_T callback,
    uint32_t callback_data_size)
 {
+	unsigned char *temp_bin, *temp_render;
+	unsigned char *temp_bin2, *temp_render2;
+	int bin_length, render_length;
+	int count;
+
    KHRN_FMEM_CALLBACK_DATA_T *callback_data;
 
    vcos_assert(fmem->bin_end != NULL && fmem->render_begin != NULL);
@@ -264,6 +269,25 @@ void *khrn_fmem_queue(
 
    fmem->nmem_entered = true;
    fmem->nmem_pos = khrn_nmem_enter();
+
+   bin_length = (char *)fmem->bin_end - (char *)fmem->bin_begin;
+   render_length = (char *)fmem->cle_pos - (char *)fmem->render_begin;
+
+#ifdef MEGA_DEBUG
+   temp_bin = (unsigned char *)malloc(bin_length);
+   temp_render = (unsigned char *)malloc(render_length);
+   temp_bin2 = (unsigned char *)malloc(bin_length);
+   temp_render2 = (unsigned char *)malloc(render_length);
+
+   memcpy(temp_bin, fmem->bin_begin, bin_length);
+   memcpy(temp_render, fmem->render_begin, render_length);
+
+   assert((memcmp(temp_bin, temp_bin, bin_length) == 0));
+   assert((memcmp(temp_render, temp_render, render_length) == 0));
+
+   for (count = 0; count < 10; count++)
+	   printf("B%d: %08x %08x\n", count, ((int *)temp_bin)[count], ((int *)temp_render)[count]);
+#endif
 
   /* want all the vpm we can get */
   /* but we only need 120 rows to ensure we don't lock up (32 for
@@ -285,6 +309,31 @@ void *khrn_fmem_queue(
 
    callback_data->fmem = fmem;
    callback_data->callback = callback;
+
+#ifdef MEGA_DEBUG
+   memcpy(temp_bin2, fmem->bin_begin, bin_length);
+   memcpy(temp_render2, fmem->render_begin, render_length);
+
+   for (count = 0; count < 10; count++)
+	   printf("A%d: %08x %08x\n", count, ((int *)temp_bin)[count], ((int *)temp_render)[count]);
+
+   if (memcmp(temp_bin, temp_bin2, bin_length) == 0)
+	   printf("binning is equal\n");
+   else
+	   printf("binning is not equal\n");
+
+   if (memcmp(temp_render, temp_render2, render_length) == 0)
+	   printf("render is equal\n");
+   else
+	   printf("render is not equal\n");
+
+   free(temp_bin);
+   free(temp_bin2);
+   free(temp_render);
+   free(temp_render2);
+#endif
+
+
 
 #ifdef XXX_OFFSET
    /*khrn_hw_ready_with_user_shader(true, callback_data,
@@ -365,7 +414,7 @@ static bool alloc_next(KHRN_FMEM_T *fmem)
    block = (uint32_t *)khrn_nmem_group_alloc_master(&fmem->nmem_group);
    if (!block) return false;
 
-   add_byte(&fmem->cle_pos, KHRN_HW_INSTR_BRANCH);
+   Add_byte(&fmem->cle_pos, KHRN_HW_INSTR_BRANCH);
    add_pointer(&fmem->cle_pos, block);
 
    fmem->cle_pos = (uint8_t *)block;
@@ -429,6 +478,9 @@ static void do_fix_lock(KHRN_FMEM_T *fmem)
       mem_lock_multiple_phys(pointers, f->handles, count);
       for (i = 0; i < count; i++)
       {
+#ifdef MEGA_DEBUG
+    	  printf("put lock %p=%08x\n", f->locations[i], (khrn_hw_alias_direct(pointers[i])));
+#endif
          put_word(f->locations[i], (khrn_hw_alias_direct(pointers[i])));    //PTR
       }
    }
@@ -456,6 +508,9 @@ static void do_specials(KHRN_FMEM_T *fmem, const uint32_t *specials)
       {
          w = get_word(h[i].special.location);
          w += specials[h[i].special.special_i];
+#ifdef MEGA_DEBUG
+         printf("put special %p=%08x\n", h[i].special.location, w);
+#endif
          put_word(h[i].special.location, w);
       }
    }

@@ -523,7 +523,7 @@ typedef void (GL_APIENTRYP PFNGLDRAWTEXFVOESPROC) (const GLfloat *coords);
 
 /* GL_OES_EGL_image */
 #ifndef GL_OES_EGL_image
-#define GL_OES_EGL_image 1
+//#define GL_OES_EGL_image 1
 #ifdef GL_GLEXT_PROTOTYPES
 GL_API void GL_APIENTRY glEGLImageTargetTexture2DOES (GLenum target, GLeglImageOES image);
 GL_API void GL_APIENTRY glEGLImageTargetRenderbufferStorageOES (GLenum target, GLeglImageOES image);
